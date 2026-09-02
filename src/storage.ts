@@ -95,6 +95,20 @@ export async function writeFileAtomically(filePath: string, content: Buffer | st
     await fs.rename(temporaryPath, filePath);
 }
 
+/**
+ * Puts a second name on a file that already exists, through a temporary name so that a reader can
+ * never observe a half linked one.
+ *
+ * The two names are the same bytes rather than a copy of them, which is what lets a thumbnail that
+ * would have come out identical to the original cost an inode instead of a second picture.
+ */
+export async function linkFileAtomically(existingPath: string, filePath: string): Promise<void> {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const temporaryPath = `${filePath}.${process.pid}.tmp`;
+    await fs.link(existingPath, temporaryPath);
+    await fs.rename(temporaryPath, filePath);
+}
+
 export async function saveImage(content: Buffer, metadata: ImageMetadata): Promise<void> {
     await writeFileAtomically(originalPath(metadata.id, metadata.format), content);
     await writeFileAtomically(metadataPath(metadata.id), JSON.stringify(metadata, null, 2));

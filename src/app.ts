@@ -18,6 +18,7 @@ import {
     idOf,
     originalPath,
     readMetadata,
+    linkFileAtomically,
     saveImage,
     thumbnailPath,
     urlOf,
@@ -223,7 +224,14 @@ async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<
         return inFlight;
     }
     const creation = (async () => {
-        const original = await readFile(originalPath(metadata.id, metadata.format));
+        const sourcePath = originalPath(metadata.id, metadata.format);
+        // A thumbnail at least as wide as the picture is the picture - resizing would only re-encode
+        // it into a second copy of the same thing. It gets a name under `thumb` all the same, so the
+        // front end keeps serving every size straight from disk, but the bytes are stored once.
+        if (width >= metadata.width) {
+            return linkFileAtomically(sourcePath, targetPath);
+        }
+        const original = await readFile(sourcePath);
         const thumbnail = await createThumbnail(original, width, metadata.format);
         await writeFileAtomically(targetPath, thumbnail);
     })().finally(() => thumbnailsBeingCreated.delete(targetPath));

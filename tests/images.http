@@ -258,6 +258,15 @@ GET {{host}}/{{Upload.id}}.jpg?width=250
 ?? status == 200
 
 ###
+# @name AWidthAtLeastAsWideAsThePictureIsThePictureItself
+GET {{host}}/{{Upload.id}}.jpg?width=1920
+
+?? status == 200
+?? header Content-Type == image/jpeg
+# The fixture is 1200 wide, so 1920 can only be the original rather than a re-encode of it.
+?? js parseInt(response.headers['content-length']) == {{Upload.size}}
+
+###
 # @name UnsupportedThumbnailWidth
 GET {{host}}/{{Upload.id}}.jpg?width=137
 

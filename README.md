@@ -64,6 +64,12 @@ sending those fields gets a 403.
 Thumbnail widths are an allow list rather than anything a caller asks for, because an arbitrary width
 would let anyone fill the disk with derivatives.
 
+A width at least as wide as the picture is the picture, and resizing it would only write a second
+copy of the same image - the site already caps what it uploads at 1920, so asking for 1920 back would
+otherwise re-encode nearly every picture into a derivative of its own size. Those get a name under
+`thumb` all the same, hard linked to the original, so the front end still serves every size straight
+from disk while the bytes are stored once.
+
 Every size of a picture is the same url with one thing varied - whoever holds `<id>.jpg` asks for a
 smaller one by appending `?width=`, rather than having to know how to spell a second kind of url.
 
@@ -140,6 +146,7 @@ server {
     0e/
       0e3c1efd4bcae001346e399ff9c6d6c3/
         250px.jpg                              served for ?width=250
+        1920px.jpg                             a link to the original, when it is already narrower
 ```
 
 256 buckets, which keeps a directory at a few hundred images for a hundred thousand of them, and at a
@@ -147,5 +154,6 @@ few thousand for a million. `thumb` can never collide with a bucket, since a buc
 characters. Everything under `thumb` can be deleted at any time and will be regenerated on demand.
 
 Originals are stored byte for byte as they arrived, EXIF included - re-encoding them would break the
-promise that the id is the hash of the file. Thumbnails have their metadata stripped and the EXIF
-orientation applied, so they do not hand out the photographer's camera and GPS position.
+promise that the id is the hash of the file. Thumbnails that are actually a resize have their
+metadata stripped and the EXIF orientation applied; the ones that are a link to the original are the
+original, EXIF and all, which gives nothing away that `<id>.jpg` does not already serve.
