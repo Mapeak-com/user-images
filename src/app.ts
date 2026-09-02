@@ -25,12 +25,11 @@ import {
 import apiDocs from './user-images.openapi.json';
 
 /**
- * The routes are regular expressions rather than express paths, since an id and a width need to be
- * matched exactly - anything else would let a request walk out of the storage directory.
+ * The routes are regular expressions rather than express paths, since an id has to be matched
+ * exactly - anything else would let a request walk out of the storage directory.
  */
 const IMAGE_ROUTE = new RegExp(`^/(${ID_PATTERN})\\.(jpg|png|webp)$`);
 const METADATA_ROUTE = new RegExp(`^/(${ID_PATTERN})\\.json$`);
-const THUMBNAIL_ROUTE = new RegExp(`^/(${ID_PATTERN})/(\\d{1,5})px\\.(jpg|png|webp)$`);
 
 /** A picture at a given url can never change, so whoever holds it can keep it forever */
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
@@ -153,15 +152,6 @@ app.get(METADATA_ROUTE, async (req: Request, res: Response, next: NextFunction) 
     }
 });
 
-app.get(IMAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params[0] as string;
-    const format = req.params[1] as ImageFormat;
-    if (!await exists(originalPath(id, format))) {
-        return res.sendStatus(404);
-    }
-    sendStoredFile(res, originalPath(id, format), next);
-});
-
 /**
  * Thumbnails are generated the first time they are asked for and then kept on disk, so a width that
  * nobody uses costs nothing. Requests that arrive together for a thumbnail that does not exist yet
@@ -187,14 +177,31 @@ async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<
     return creation;
 }
 
-app.get(THUMBNAIL_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Serves a picture, at its own size or at one of the widths this instance generates.
+ *
+ * The width is a query parameter rather than a path of its own, so that every size of a picture is
+ * the same url with one thing varied - whoever holds `<id>.jpg` asks for a smaller one by appending
+ * `?width=`, without having to know how to spell a second kind of url. Only the widths the instance
+ * allows are generated, since an arbitrary width would let anyone fill the disk with derivatives.
+ */
+app.get(IMAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params[0] as string;
-        const width = Number(req.params[1]);
-        const format = req.params[2] as ImageFormat;
+        const format = req.params[1] as ImageFormat;
+        const requestedWidth = req.query.width;
+
+        if (requestedWidth === undefined) {
+            if (!await exists(originalPath(id, format))) {
+                return res.sendStatus(404);
+            }
+            return sendStoredFile(res, originalPath(id, format), next);
+        }
+
+        const width = Number(requestedWidth);
         if (!config.thumbnailWidths.includes(width)) {
             return res.status(400).json({
-                message: 'Unsupported thumbnail width',
+                message: 'Unsupported width',
                 supportedWidths: config.thumbnailWidths
             });
         }

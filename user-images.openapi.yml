@@ -115,56 +115,26 @@ paths:
     get:
       tags:
         - Images
-      summary: Serves an image
+      summary: Serves an image, at its own size or at one of the widths the instance generates
+      description: |
+        Without `width` the original is served, byte for byte as it was uploaded.
+
+        With `width` a thumbnail is served. Thumbnails are generated the first time they are asked
+        for and then kept. Only the widths the instance allows are generated, any other width is
+        rejected.
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/Format'
-      responses:
-        '200':
-          description: The image
-          content:
-            image/jpeg: {}
-            image/png: {}
-            image/webp: {}
-        '404':
-          description: No such image
-  /{id}.json:
-    get:
-      tags:
-        - Images
-      summary: Serves the metadata of an image, including who should be credited for it
-      parameters:
-        - $ref: '#/components/parameters/Id'
-      responses:
-        '200':
-          description: The metadata
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImageMetadata'
-        '404':
-          description: No such image
-  /{id}/{width}px.{format}:
-    get:
-      tags:
-        - Images
-      summary: Serves a thumbnail of an image
-      description: |
-        Thumbnails are generated the first time they are asked for and then kept.
-        Only the widths the instance allows are generated, any other width is rejected.
-      parameters:
-        - $ref: '#/components/parameters/Id'
         - name: width
-          in: path
-          required: true
+          in: query
+          required: false
           description: The width in pixels, one of the widths the instance allows
           schema:
             type: integer
             example: 250
-        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: The thumbnail
+          description: The image
           content:
             image/jpeg: {}
             image/png: {}
@@ -182,6 +152,22 @@ paths:
                     type: array
                     items:
                       type: integer
+        '404':
+          description: No such image
+  /{id}.json:
+    get:
+      tags:
+        - Images
+      summary: Serves the metadata of an image, including who should be credited for it
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: The metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageMetadata'
         '404':
           description: No such image
 components:

@@ -87,20 +87,20 @@ GET {{host}}/{{Upload.id}}.json
 
 ###
 # @name GetThumbnail
-GET {{host}}/{{Upload.id}}/250px.jpg
+GET {{host}}/{{Upload.id}}.jpg?width=250
 
 ?? status == 200
 ?? header Content-Type == image/jpeg
 
 ###
 # @name GetThumbnailAgainIsServedFromDisk
-GET {{host}}/{{Upload.id}}/250px.jpg
+GET {{host}}/{{Upload.id}}.jpg?width=250
 
 ?? status == 200
 
 ###
 # @name UnsupportedThumbnailWidth
-GET {{host}}/{{Upload.id}}/137px.jpg
+GET {{host}}/{{Upload.id}}.jpg?width=137
 
 ?? status == 400
 
