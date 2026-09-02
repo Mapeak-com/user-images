@@ -229,6 +229,22 @@ GET {{host}}/{{Upload.id}}.json
 ?? js response.parsedBody.url endsWith .jpg
 
 ###
+# @name GetPage
+GET {{host}}/{{Upload.id}}
+
+?? status == 200
+?? header Content-Type contains text/html
+?? body contains A view of the spring
+?? body contains https://www.openstreetmap.org/user/test-user
+?? body contains CC0-1.0
+
+###
+# @name GetPageOfAnUnknownImage
+GET {{host}}/00000000000000000000000000000000
+
+?? status == 404
+
+###
 # @name GetThumbnail
 GET {{host}}/{{Upload.id}}.jpg?width=250
 

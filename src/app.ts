@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from './config.js';
 import { AuthenticatedUser, authenticate } from './auth.js';
 import { createThumbnail, probe } from './images.js';
+import { renderImagePage } from './page.js';
 import {
     ID_PATTERN,
     ImageFormat,
@@ -30,6 +31,7 @@ import apiDocs from './user-images.openapi.json';
  */
 const IMAGE_ROUTE = new RegExp(`^/(${ID_PATTERN})\\.(jpg|png|webp)$`);
 const METADATA_ROUTE = new RegExp(`^/(${ID_PATTERN})\\.json$`);
+const PAGE_ROUTE = new RegExp(`^/(${ID_PATTERN})$`);
 
 /** A picture at a given url can never change, so whoever holds it can keep it forever */
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
@@ -237,6 +239,22 @@ async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<
  * `?width=`, without having to know how to spell a second kind of url. Only the widths the instance
  * allows are generated, since an arbitrary width would let anyone fill the disk with derivatives.
  */
+/**
+ * The page a credit under an image links to, so that whoever follows it sees the picture together
+ * with who took it and the license it may be used under.
+ */
+app.get(PAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const metadata = await readMetadata(req.params[0] as string);
+        if (!metadata) {
+            return res.sendStatus(404);
+        }
+        res.type('html').send(renderImagePage(metadata, config.thumbnailWidths));
+    } catch (error) {
+        next(error);
+    }
+});
+
 app.get(IMAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params[0] as string;

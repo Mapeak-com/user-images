@@ -34,6 +34,7 @@ single OSM tag changing.
 | `GET /:id.jpg` | The original |
 | `GET /:id.jpg?width=250` | A thumbnail, generated on the first request and then kept |
 | `GET /:id.json` | The metadata, including who should be credited |
+| `GET /:id` | The page of the image - the picture, who took it and the license, this is what a credit links to |
 | `GET /health` | Liveness |
 | `GET /api-docs` | Swagger UI for `user-images.openapi.yml` |
 

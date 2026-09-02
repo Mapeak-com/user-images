@@ -30,6 +30,7 @@ jobs:
         PORT: 3000
         STORAGE_DIR: ./data
         TEST_MODE: true
+        ADMIN_OSM_USER_IDS: test-admin-id
       run: |
         npm start &
         npx wait-on http://localhost:3000/health

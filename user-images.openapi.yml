@@ -194,6 +194,24 @@ paths:
                 $ref: '#/components/schemas/ImageMetadata'
         '404':
           description: No such image
+  /{id}:
+    get:
+      tags:
+        - Images
+      summary: Serves the page of an image
+      description: |
+        The page a credit under an image links to, the way a wikimedia commons file page is what the
+        credit of an image taken from there links to. It shows the picture together with who took it
+        and the license it may be used under.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: The page
+          content:
+            text/html: {}
+        '404':
+          description: No such image
 components:
   parameters:
     Id:
