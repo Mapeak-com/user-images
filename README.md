@@ -35,6 +35,7 @@ single OSM tag changing.
 | `GET /:id.jpg?width=250` | A thumbnail, generated on the first request and then kept |
 | `GET /:id.json` | The metadata, including who should be credited |
 | `GET /:id` | A page showing the picture, its credit, its license and what its camera recorded |
+| `GET /favicon.ico` | Redirects to the icon of the site this instance belongs to |
 | `GET /:id` | The page of the image - the picture, who took it and the license, this is what a credit links to |
 | `GET /health` | Liveness |
 | `GET /api-docs` | Swagger UI for `user-images.openapi.yml` |
@@ -59,7 +60,7 @@ sending those fields gets a 403.
 | `THUMBNAIL_WIDTHS` | `100,250,330,500,960,1920` | The widths this instance is willing to generate |
 | `MAX_UPLOAD_BYTES` | `20971520` | 20 MB |
 | `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license |
-| `FAVICON_URL` | Mapeak's | The icon the image pages show in a browser tab, empty for none |
+| `FAVICON_URL` | Mapeak's | The icon a browser tab shows, empty for none |
 | `ADMIN_OSM_USER_IDS` | empty | OSM user ids allowed to delete images they did not upload |
 | `TEST_MODE` | `false` | Accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests |
 

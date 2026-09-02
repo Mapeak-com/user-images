@@ -51,6 +51,19 @@ app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok' });
 });
 
+/**
+ * A browser asks the root of a site for its icon whenever what it is showing is not a page it can
+ * put a `<link rel="icon">` in - which here is every picture and every piece of metadata, since
+ * those are what this service mostly serves. Answering it gives the tab an icon for those too.
+ */
+app.get('/favicon.ico', (req: Request, res: Response) => {
+    if (!config.faviconUrl) {
+        return res.sendStatus(404);
+    }
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.redirect(301, config.faviconUrl);
+});
+
 // --- Upload ---
 
 function parseLocation(body: Record<string, string>): { lat: number; lng: number } | undefined | 'invalid' {

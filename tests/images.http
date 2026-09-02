@@ -234,6 +234,14 @@ GET {{host}}/{{Upload.id}}
 ?? body contains rel="icon"
 
 ###
+# @name FaviconRedirectsToTheSiteItBelongsTo
+# @no-redirect
+GET {{host}}/favicon.ico
+
+?? status == 301
+?? header Location contains favicon
+
+###
 # @name GetPageOfAnUnknownImage
 GET {{host}}/00000000000000000000000000000000
 

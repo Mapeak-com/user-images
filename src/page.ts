@@ -124,7 +124,6 @@ export function renderImagePage(
     // The page is the url without the extension, which is the one worth sharing since it carries the
     // credit and the license rather than the bare bytes.
     const pageUrl = metadata.url.replace(new RegExp(`\\.${format}$`), '');
-    const description = `A picture by ${metadata.osmUser}, ${metadata.license}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -132,12 +131,10 @@ export function renderImagePage(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
-<meta name="description" content="${escapeHtml(description)}">
 <link rel="canonical" href="${escapeHtml(pageUrl)}">${site.faviconUrl ? `
 <link rel="icon" href="${escapeHtml(site.faviconUrl)}">` : ''}
 <meta property="og:type" content="article">
 <meta property="og:title" content="${escapeHtml(title)}">
-<meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(pageUrl)}">
 <meta property="og:image" content="${escapeHtml(previewUrl)}">
 <meta property="og:image:type" content="image/${format === 'jpg' ? 'jpeg' : format}">${width && height ? `
