@@ -1,4 +1,5 @@
-import { ImageMetadata } from './storage.js';
+import { MeasuredImage } from './images.js';
+import { ImageFormat, ImageMetadata } from './storage.js';
 
 /**
  * The licenses a page links to. Anything else is shown as plain text, since a made up SPDX id would
@@ -29,6 +30,60 @@ function authorHtml(osmUser: string, osmUserId?: string): string {
         : escapeHtml(osmUser);
 }
 
+function rowHtml(label: string, value?: string): string {
+    return value ? `<dt>${escapeHtml(label)}</dt><dd>${value}</dd>` : '';
+}
+
+function coordinatesHtml(location: { lat: number; lng: number }): string {
+    const { lat, lng } = location;
+    return `<a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lng}`
+        + `#map=17/${lat}/${lng}">${lat}, ${lng}</a>`;
+}
+
+/** A date is shown to the day, since the time of day is only ever noise on a page like this */
+function day(value: string): string {
+    return escapeHtml(value.slice(0, 10));
+}
+
+/**
+ * What the camera recorded, kept in a section of its own.
+ *
+ * The point of separating it is that everything above it is what the uploader said, and this is what
+ * the picture itself says - so a date or a position that disagrees is visible rather than hidden.
+ */
+function exifHtml(exif: MeasuredImage['exif']): string {
+    if (!exif) {
+        return '';
+    }
+    const exposure = [
+        exif.exposureTime,
+        exif.fNumber ? `f/${exif.fNumber}` : undefined,
+        exif.iso ? `ISO ${exif.iso}` : undefined
+    ].filter(Boolean).join(' &middot; ');
+    const focalLength = exif.focalLength
+        ? `${exif.focalLength} mm`
+            + (exif.focalLengthIn35mm ? ` (${exif.focalLengthIn35mm} mm equivalent)` : '')
+        : undefined;
+
+    const rows = [
+        rowHtml('Camera', exif.camera && escapeHtml(exif.camera)),
+        rowHtml('Lens', exif.lens && escapeHtml(exif.lens)),
+        rowHtml('Taken', exif.takenAt && escapeHtml(exif.takenAt.replace('T', ' '))),
+        rowHtml('Exposure', exposure || undefined),
+        rowHtml('Focal length', focalLength),
+        rowHtml('Position', exif.location && coordinatesHtml(exif.location)),
+        rowHtml('Altitude', exif.altitude !== undefined ? `${exif.altitude} m` : undefined),
+        rowHtml('Software', exif.software && escapeHtml(exif.software))
+    ].filter(Boolean);
+
+    return rows.length === 0 ? '' : `
+<h2>From the camera</h2>
+<p class="note">Read out of the picture itself, rather than given when it was uploaded.</p>
+<dl>
+${rows.join('\n')}
+</dl>`;
+}
+
 function licenseHtml(license: string): string {
     const url = LICENSE_URLS[license];
     return url
@@ -41,17 +96,31 @@ function licenseHtml(license: string): string {
  * of an image taken from there links to - it shows the picture together with who took it and the
  * license it may be used under.
  */
-export function renderImagePage(metadata: ImageMetadata, thumbnailWidths: number[]): string {
-    const title = metadata.description || `Image by ${metadata.osmUser}`;
+export function renderImagePage(
+    metadata: ImageMetadata,
+    format: ImageFormat,
+    measured: MeasuredImage,
+    thumbnailWidths: number[]
+): string {
+    const title = `Image by ${metadata.osmUser}`;
     const largestWidth = thumbnailWidths.length > 0 ? Math.max(...thumbnailWidths) : undefined;
     const previewWidth = thumbnailWidths.find(width => width >= 960) ?? largestWidth;
     const previewUrl = previewWidth ? `${metadata.url}?width=${previewWidth}` : metadata.url;
-    const capturedAt = metadata.capturedAt
-        ? `<dt>Taken</dt><dd>${escapeHtml(new Date(metadata.capturedAt).toISOString().slice(0, 10))}</dd>`
-        : '';
-    const location = metadata.location
-        ? `<dt>Location</dt><dd><a href="https://www.openstreetmap.org/?mlat=${metadata.location.lat}&amp;mlon=${metadata.location.lng}#map=17/${metadata.location.lat}/${metadata.location.lng}">${metadata.location.lat}, ${metadata.location.lng}</a></dd>`
-        : '';
+
+    // A preview is never enlarged, so it is the original size whenever the picture is the smaller.
+    // Without a size there is nothing to tell a browser, and the picture simply lays itself out.
+    const width = measured.width && measured.height
+        ? Math.min(previewWidth ?? measured.width, measured.width)
+        : undefined;
+    const height = width && measured.width && measured.height
+        ? Math.round(measured.height * (width / measured.width))
+        : undefined;
+    const sizeAttributes = width && height ? ` width="${width}" height="${height}"` : '';
+
+    // The page is the url without the extension, which is the one worth sharing since it carries the
+    // credit and the license rather than the bare bytes.
+    const pageUrl = metadata.url.replace(new RegExp(`\\.${format}$`), '');
+    const description = `A picture by ${metadata.osmUser}, ${metadata.license}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -59,27 +128,41 @@ export function renderImagePage(metadata: ImageMetadata, thumbnailWidths: number
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
+<meta name="description" content="${escapeHtml(description)}">
+<link rel="canonical" href="${escapeHtml(pageUrl)}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(description)}">
+<meta property="og:url" content="${escapeHtml(pageUrl)}">
+<meta property="og:image" content="${escapeHtml(previewUrl)}">
+<meta property="og:image:type" content="image/${format === 'jpg' ? 'jpeg' : format}">${width && height ? `
+<meta property="og:image:width" content="${width}">
+<meta property="og:image:height" content="${height}">` : ''}
+<meta property="og:image:alt" content="${escapeHtml(title)}">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root { color-scheme: light dark; }
 body { margin: 0; padding: 1.5rem; font: 16px/1.5 system-ui, sans-serif; max-width: 60rem; margin-inline: auto; }
 img { max-width: 100%; height: auto; display: block; margin-bottom: 1rem; }
 h1 { font-size: 1.25rem; font-weight: 600; }
+h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
 dt { font-weight: 600; }
 dd { margin: 0; }
+.note { margin: 0 0 0.75rem; opacity: 0.7; font-size: 0.875rem; }
 </style>
 </head>
 <body>
-<a href="${escapeHtml(metadata.url)}"><img src="${escapeHtml(previewUrl)}" alt="${escapeHtml(title)}" width="${metadata.width}" height="${metadata.height}"></a>
+<a href="${escapeHtml(metadata.url)}"><img src="${escapeHtml(previewUrl)}" alt="${escapeHtml(title)}"${sizeAttributes}></a>
 <h1>${escapeHtml(title)}</h1>
 <dl>
-<dt>Author</dt><dd>${authorHtml(metadata.osmUser, metadata.osmUserId)}</dd>
-<dt>License</dt><dd>${licenseHtml(metadata.license)}</dd>
-${capturedAt}
-${location}
-<dt>Uploaded</dt><dd>${escapeHtml(metadata.uploadedAt.slice(0, 10))}</dd>
-<dt>File</dt><dd><a href="${escapeHtml(metadata.url)}">${metadata.width}&times;${metadata.height}, ${Math.round(metadata.size / 1024)} KB</a></dd>
-</dl>
+${[
+        rowHtml('Author', authorHtml(metadata.osmUser, metadata.osmUserId)),
+        rowHtml('License', licenseHtml(metadata.license)),
+        rowHtml('Location', metadata.location && coordinatesHtml(metadata.location)),
+        rowHtml('Uploaded', day(metadata.uploadedAt))
+    ].filter(Boolean).join('\n')}
+</dl>${exifHtml(measured.exif)}
 </body>
 </html>
 `;

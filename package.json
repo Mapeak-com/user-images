@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "cors": "^2.8.6",
+    "exif-reader": "^2.0.3",
     "express": "^5.2.1",
     "lru-cache": "^11.2.5",
     "multer": "^2.0.2",

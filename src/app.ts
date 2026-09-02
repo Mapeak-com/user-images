@@ -7,13 +7,14 @@ import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config.js';
 import { AuthenticatedUser, authenticate } from './auth.js';
-import { createThumbnail, probe } from './images.js';
+import { createThumbnail, measure, probe } from './images.js';
 import { renderImagePage } from './page.js';
 import {
     ID_PATTERN,
     ImageFormat,
     ImageMetadata,
     deleteImage,
+    formatOf,
     exists,
     idOf,
     originalPath,
@@ -121,9 +122,6 @@ app.post('/api/images', authenticate, upload.single('file'), async (req: Request
         if (location === 'invalid') {
             return res.status(400).json({ message: 'lat and lng must both be valid coordinates' });
         }
-        if (body.capturedAt && Number.isNaN(Date.parse(body.capturedAt))) {
-            return res.status(400).json({ message: 'capturedAt must be an ISO 8601 date' });
-        }
         const attribution = parseAttribution(body, req.user!);
         if (attribution === 'forbidden') {
             return res.status(403).json({ message: 'Only a moderator can state who an image belongs to' });
@@ -142,18 +140,12 @@ app.post('/api/images', authenticate, upload.single('file'), async (req: Request
 
         const metadata: ImageMetadata = {
             id,
-            format: probed.format,
             url: urlOf(id, probed.format),
             osmUser: attribution.osmUser,
             osmUserId: attribution.osmUserId,
-            description: body.description || undefined,
-            capturedAt: body.capturedAt || undefined,
             location,
             license: body.license || config.defaultLicense,
-            uploadedAt: attribution.uploadedAt,
-            width: probed.width,
-            height: probed.height,
-            size: req.file.buffer.length
+            uploadedAt: attribution.uploadedAt
         };
         await saveImage(req.file.buffer, metadata);
         res.status(201).json(metadata);
@@ -214,8 +206,8 @@ app.get(METADATA_ROUTE, async (req: Request, res: Response, next: NextFunction) 
  */
 const thumbnailsBeingCreated = new Map<string, Promise<void>>();
 
-async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<void> {
-    const targetPath = thumbnailPath(metadata.id, width, metadata.format);
+async function ensureThumbnail(id: string, format: ImageFormat, width: number): Promise<void> {
+    const targetPath = thumbnailPath(id, width, format);
     if (await exists(targetPath)) {
         return;
     }
@@ -224,15 +216,17 @@ async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<
         return inFlight;
     }
     const creation = (async () => {
-        const sourcePath = originalPath(metadata.id, metadata.format);
+        const sourcePath = originalPath(id, format);
         // A thumbnail at least as wide as the picture is the picture - resizing would only re-encode
         // it into a second copy of the same thing. It gets a name under `thumb` all the same, so the
         // front end keeps serving every size straight from disk, but the bytes are stored once.
-        if (width >= metadata.width) {
+        // The size is read off the header rather than by decoding the whole picture.
+        const { width: originalWidth } = await measure(sourcePath);
+        if (originalWidth !== undefined && width >= originalWidth) {
             return linkFileAtomically(sourcePath, targetPath);
         }
         const original = await readFile(sourcePath);
-        const thumbnail = await createThumbnail(original, width, metadata.format);
+        const thumbnail = await createThumbnail(original, width);
         await writeFileAtomically(targetPath, thumbnail);
     })().finally(() => thumbnailsBeingCreated.delete(targetPath));
     thumbnailsBeingCreated.set(targetPath, creation);
@@ -253,11 +247,17 @@ async function ensureThumbnail(metadata: ImageMetadata, width: number): Promise<
  */
 app.get(PAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const metadata = await readMetadata(req.params[0] as string);
+        const id = req.params[0] as string;
+        const metadata = await readMetadata(id);
         if (!metadata) {
             return res.sendStatus(404);
         }
-        res.type('html').send(renderImagePage(metadata, config.thumbnailWidths));
+        // The size and the camera come out of the picture as the page is built. They are not stored
+        // with the rest, since the picture is the thing that knows them and it can never disagree
+        // with itself the way a copy of them could.
+        const format = formatOf(metadata);
+        const measured = await measure(originalPath(id, format));
+        res.type('html').send(renderImagePage(metadata, format, measured, config.thumbnailWidths));
     } catch (error) {
         next(error);
     }
@@ -283,11 +283,10 @@ app.get(IMAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => 
                 supportedWidths: config.thumbnailWidths
             });
         }
-        const metadata = await readMetadata(id);
-        if (!metadata || metadata.format !== format) {
+        if (!await exists(originalPath(id, format))) {
             return res.sendStatus(404);
         }
-        await ensureThumbnail(metadata, width);
+        await ensureThumbnail(id, format, width);
         sendStoredFile(res, thumbnailPath(id, width, format), next);
     } catch (error) {
         next(error);

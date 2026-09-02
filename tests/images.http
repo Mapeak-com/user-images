@@ -22,14 +22,6 @@ Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
-Content-Disposition: form-data; name="description"
-
-A view of the spring
---WebAppBoundary
-Content-Disposition: form-data; name="capturedAt"
-
-2026-05-01T08:30:00Z
---WebAppBoundary
 Content-Disposition: form-data; name="lat"
 
 31.7683
@@ -46,10 +38,7 @@ Content-Type: image/jpeg
 
 ?? status == 201
 ?? js response.parsedBody.osmUser == test-user
-?? js response.parsedBody.format == jpg
-?? js response.parsedBody.width == 1200
 ?? js response.parsedBody.license == CC0-1.0
-?? js response.parsedBody.description == A view of the spring
 ?? js response.parsedBody.location.lat == 31.7683
 ?? js response.parsedBody.id.length == 32
 
@@ -220,6 +209,10 @@ GET {{host}}/{{Upload.id}}.jpg
 ?? header Content-Type == image/jpeg
 ?? header Cache-Control contains immutable
 
+{{
+  exports.originalLength = response.headers['content-length'];
+}}
+
 ###
 # @name GetMetadata
 GET {{host}}/{{Upload.id}}.json
@@ -234,9 +227,10 @@ GET {{host}}/{{Upload.id}}
 
 ?? status == 200
 ?? header Content-Type contains text/html
-?? body contains A view of the spring
+?? body contains Image by test-user
 ?? body contains https://www.openstreetmap.org/user/test-user
 ?? body contains CC0-1.0
+?? body contains og:image
 
 ###
 # @name GetPageOfAnUnknownImage
@@ -263,8 +257,9 @@ GET {{host}}/{{Upload.id}}.jpg?width=1920
 
 ?? status == 200
 ?? header Content-Type == image/jpeg
-# The fixture is 1200 wide, so 1920 can only be the original rather than a re-encode of it.
-?? js parseInt(response.headers['content-length']) == {{Upload.size}}
+# The fixture is 1200 wide, so a width of 1920 can only be the original itself rather than a
+# re-encode of it, and it is served as the very same bytes.
+?? js response.headers['content-length'] == {{originalLength}}
 
 ###
 # @name UnsupportedThumbnailWidth

@@ -34,6 +34,7 @@ single OSM tag changing.
 | `GET /:id.jpg` | The original |
 | `GET /:id.jpg?width=250` | A thumbnail, generated on the first request and then kept |
 | `GET /:id.json` | The metadata, including who should be credited |
+| `GET /:id` | A page showing the picture, its credit, its license and what its camera recorded |
 | `GET /:id` | The page of the image - the picture, who took it and the license, this is what a credit links to |
 | `GET /health` | Liveness |
 | `GET /api-docs` | Swagger UI for `user-images.openapi.yml` |
@@ -152,6 +153,12 @@ server {
 256 buckets, which keeps a directory at a few hundred images for a hundred thousand of them, and at a
 few thousand for a million. `thumb` can never collide with a bucket, since a bucket is two hex
 characters. Everything under `thumb` can be deleted at any time and will be regenerated on demand.
+
+The metadata holds only what cannot be worked out from the picture: what the uploader said about it,
+and what this service established about who sent it and when. The format, the size in pixels and the
+size in bytes are not in there, because the picture already knows them and a second copy of an answer
+can only ever drift from it. The page reads them, and what the camera recorded, straight out of the
+file as it is built.
 
 Originals are stored byte for byte as they arrived, EXIF included - re-encoding them would break the
 promise that the id is the hash of the file. Thumbnails that are actually a resize have their

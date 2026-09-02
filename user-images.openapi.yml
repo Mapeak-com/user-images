@@ -60,13 +60,6 @@ paths:
                   type: string
                   format: binary
                   description: The image itself, a jpeg, a png or a webp
-                description:
-                  type: string
-                  description: What the image shows, usually the name of the point of interest
-                capturedAt:
-                  type: string
-                  format: date-time
-                  description: When the picture was taken, as opposed to when it was uploaded
                 lat:
                   type: number
                   format: double
@@ -240,21 +233,14 @@ components:
       type: object
       required:
         - id
-        - format
         - url
         - osmUser
         - license
         - uploadedAt
-        - width
-        - height
-        - size
       properties:
         id:
           type: string
           example: 3a7f9c2e1b4d0a95f60c2d3e4f501b6c
-        format:
-          type: string
-          enum: [jpg, png, webp]
         url:
           type: string
           description: The url to put in the OSM "image" tag
@@ -264,11 +250,6 @@ components:
           description: The OSM display name of whoever uploaded the image, who should be credited for it
         osmUserId:
           type: string
-        description:
-          type: string
-        capturedAt:
-          type: string
-          format: date-time
         location:
           type: object
           properties:
@@ -284,10 +265,3 @@ components:
         uploadedAt:
           type: string
           format: date-time
-        width:
-          type: integer
-        height:
-          type: integer
-        size:
-          type: integer
-          description: The size of the original in bytes

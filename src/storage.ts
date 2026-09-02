@@ -6,23 +6,37 @@ import { config } from './config.js';
 
 export type ImageFormat = 'jpg' | 'png' | 'webp';
 
+/**
+ * What the camera recorded into the picture, as opposed to what the uploader said about it.
+ *
+ * Every field is optional because every one of them is optional in EXIF itself, and a picture that
+ * has been through an editor or a resizer often arrives with none of them.
+ */
+export type ImageExif = {
+    camera?: string;
+    lens?: string;
+    software?: string;
+    /** The wall clock the camera wrote, with its UTC offset when the camera recorded one */
+    takenAt?: string;
+    exposureTime?: string;
+    fNumber?: number;
+    iso?: number;
+    focalLength?: number;
+    focalLengthIn35mm?: number;
+    location?: { lat: number; lng: number };
+    altitude?: number;
+};
+
 export type ImageMetadata = {
     id: string;
-    format: ImageFormat;
     url: string;
     /** The OSM display name of whoever took the picture, taken from the access token of the upload */
     osmUser: string;
     /** Absent for an imported image whose OSM account no longer exists, see parseAttribution */
     osmUserId?: string;
-    description?: string;
-    /** When the picture was taken, as opposed to when it was uploaded */
-    capturedAt?: string;
     location?: { lat: number; lng: number };
     license: string;
     uploadedAt: string;
-    width: number;
-    height: number;
-    size: number;
 };
 
 /**
@@ -69,6 +83,16 @@ export function thumbnailPath(id: string, width: number, format: ImageFormat): s
     return path.resolve(config.storageDir, 'thumb', bucketOf(id), id, `${width}px.${format}`);
 }
 
+/**
+ * The format a picture is stored in, read back off the url that was built when it was saved.
+ *
+ * It is not a field of its own because it would be the same thing twice - a picture is addressed by
+ * `<id>.<format>` and the url already ends in it.
+ */
+export function formatOf(metadata: ImageMetadata): ImageFormat {
+    return metadata.url.slice(metadata.url.lastIndexOf('.') + 1) as ImageFormat;
+}
+
 export function urlOf(id: string, format: ImageFormat): string {
     return `${config.publicBaseUrl}/${id}.${format}`;
 }
@@ -110,14 +134,15 @@ export async function linkFileAtomically(existingPath: string, filePath: string)
 }
 
 export async function saveImage(content: Buffer, metadata: ImageMetadata): Promise<void> {
-    await writeFileAtomically(originalPath(metadata.id, metadata.format), content);
+    await writeFileAtomically(originalPath(metadata.id, formatOf(metadata)), content);
     await writeFileAtomically(metadataPath(metadata.id), JSON.stringify(metadata, null, 2));
 }
 
 export async function deleteImage(metadata: ImageMetadata): Promise<void> {
-    await fs.rm(originalPath(metadata.id, metadata.format), { force: true });
+    const format = formatOf(metadata);
+    await fs.rm(originalPath(metadata.id, format), { force: true });
     await fs.rm(metadataPath(metadata.id), { force: true });
-    await fs.rm(path.dirname(thumbnailPath(metadata.id, 0, metadata.format)), { recursive: true, force: true });
+    await fs.rm(path.dirname(thumbnailPath(metadata.id, 0, format)), { recursive: true, force: true });
 }
 
 export async function exists(filePath: string): Promise<boolean> {
