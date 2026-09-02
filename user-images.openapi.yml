@@ -1,0 +1,266 @@
+openapi: 3.0.1
+info:
+  title: Mapeak User Images
+  description: |
+    Stores the images users attach to points of interest, and serves them at a stable url that an
+    OSM entity can hold in its `image` tag.
+
+    An image is addressed by the hash of its bytes, so the same image uploaded twice gets the same
+    url, and the bytes behind a url never change.
+  version: 1.0.0
+servers:
+  - url: https://images.mapeak.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Tells whether the service is up
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /api/images:
+    post:
+      tags:
+        - Images
+      summary: Uploads an image
+      description: |
+        The uploader is taken from the OSM access token and never from the request, so an image is
+        always credited to the account that actually sent it.
+
+        Uploading the same bytes again is not an error, it returns the existing image with a 200.
+      security:
+        - osmAccessToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The image itself, a jpeg, a png or a webp
+                description:
+                  type: string
+                  description: What the image shows, usually the name of the point of interest
+                capturedAt:
+                  type: string
+                  format: date-time
+                  description: When the picture was taken, as opposed to when it was uploaded
+                lat:
+                  type: number
+                  format: double
+                  description: The latitude the image belongs to, sent together with lng
+                lng:
+                  type: number
+                  format: double
+                  description: The longitude the image belongs to, sent together with lat
+                license:
+                  type: string
+                  description: The SPDX id of the license, defaults to the one of the instance
+      responses:
+        '201':
+          description: The image was stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageMetadata'
+        '200':
+          description: The same image was already stored, its existing metadata is returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageMetadata'
+        '400':
+          description: The file is missing, is not an image, or a field is malformed
+        '401':
+          description: The OSM access token is missing or invalid
+        '413':
+          description: The image is larger than the limit of the instance
+  /api/images/{id}:
+    delete:
+      tags:
+        - Images
+      summary: Deletes an image and its thumbnails
+      description: Allowed for the account that uploaded the image, and for the moderators of the instance.
+      security:
+        - osmAccessToken: []
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: The image is gone
+        '401':
+          description: The OSM access token is missing or invalid
+        '403':
+          description: The image belongs to someone else
+        '404':
+          description: No such image
+  /{id}.{format}:
+    get:
+      tags:
+        - Images
+      summary: Serves an image
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The image
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+        '404':
+          description: No such image
+  /{id}.json:
+    get:
+      tags:
+        - Images
+      summary: Serves the metadata of an image, including who should be credited for it
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: The metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageMetadata'
+        '404':
+          description: No such image
+  /{id}/{width}px.{format}:
+    get:
+      tags:
+        - Images
+      summary: Serves a thumbnail of an image
+      description: |
+        Thumbnails are generated the first time they are asked for and then kept.
+        Only the widths the instance allows are generated, any other width is rejected.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: width
+          in: path
+          required: true
+          description: The width in pixels, one of the widths the instance allows
+          schema:
+            type: integer
+            example: 250
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The thumbnail
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+        '400':
+          description: The width is not one this instance generates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  supportedWidths:
+                    type: array
+                    items:
+                      type: integer
+        '404':
+          description: No such image
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: The id of the image, 32 hexadecimal characters
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{32}$'
+    Format:
+      name: format
+      in: path
+      required: true
+      description: The format the image is stored in
+      schema:
+        type: string
+        enum: [jpg, png, webp]
+  securitySchemes:
+    osmAccessToken:
+      type: http
+      scheme: bearer
+      description: An OpenStreetMap OAuth2 access token, the one the site holds for the logged in user
+  schemas:
+    ImageMetadata:
+      type: object
+      required:
+        - id
+        - format
+        - url
+        - osmUser
+        - osmUserId
+        - license
+        - uploadedAt
+        - width
+        - height
+        - size
+      properties:
+        id:
+          type: string
+          example: 3a7f9c2e1b4d0a95f60c2d3e4f501b6c
+        format:
+          type: string
+          enum: [jpg, png, webp]
+        url:
+          type: string
+          description: The url to put in the OSM "image" tag
+          example: https://images.mapeak.com/3a7f9c2e1b4d0a95f60c2d3e4f501b6c.jpg
+        osmUser:
+          type: string
+          description: The OSM display name of whoever uploaded the image, who should be credited for it
+        osmUserId:
+          type: string
+        description:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+        location:
+          type: object
+          properties:
+            lat:
+              type: number
+              format: double
+            lng:
+              type: number
+              format: double
+        license:
+          type: string
+          example: CC0-1.0
+        uploadedAt:
+          type: string
+          format: date-time
+        width:
+          type: integer
+        height:
+          type: integer
+        size:
+          type: integer
+          description: The size of the original in bytes

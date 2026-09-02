@@ -1,0 +1,41 @@
+{
+  "name": "user-images",
+  "version": "1.0.0",
+  "description": "A microservice to store the images users attach to points of interest",
+  "main": "index.ts",
+  "scripts": {
+    "generate-json": "js-yaml ./user-images.openapi.yml > ./src/user-images.openapi.json",
+    "build": "npm run generate-json && tsc",
+    "start": "node dist/index.js",
+    "test:fixtures": "node ./tests/generate-fixtures.mjs",
+    "test:http": "npm run test:fixtures && httpyac ./tests/*.http --all"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mapeak-com/user-images.git"
+  },
+  "author": "Harel Mazor",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Mapeak-com/user-images/issues"
+  },
+  "homepage": "https://github.com/Mapeak-com/user-images#readme",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.0.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "httpyac": "^6.16.0",
+    "js-yaml": "^4.1.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "lru-cache": "^11.2.5",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.0",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

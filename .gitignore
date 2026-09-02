@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Images stored by a local run
+data/
+
+# Generated at build and before the tests
+src/*.openapi.json
+tests/fixtures/

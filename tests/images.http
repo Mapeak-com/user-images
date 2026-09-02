@@ -1,0 +1,136 @@
+@host = http://localhost:3000
+@token = TEST_TOKEN
+
+###
+# @name UploadRejectsAnonymous
+POST {{host}}/api/images
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="landscape.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/landscape.jpg
+--WebAppBoundary--
+
+?? status == 401
+
+###
+# @name Upload
+POST {{host}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="description"
+
+A view of the spring
+--WebAppBoundary
+Content-Disposition: form-data; name="capturedAt"
+
+2026-05-01T08:30:00Z
+--WebAppBoundary
+Content-Disposition: form-data; name="lat"
+
+31.7683
+--WebAppBoundary
+Content-Disposition: form-data; name="lng"
+
+35.2137
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="landscape.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/landscape.jpg
+--WebAppBoundary--
+
+?? status == 201
+?? js response.parsedBody.osmUser == test-user
+?? js response.parsedBody.format == jpg
+?? js response.parsedBody.width == 1200
+?? js response.parsedBody.license == CC0-1.0
+?? js response.parsedBody.description == A view of the spring
+?? js response.parsedBody.location.lat == 31.7683
+?? js response.parsedBody.id.length == 32
+
+###
+# @name UploadingTheSameImageAgainReturnsTheSameId
+POST {{host}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="landscape.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/landscape.jpg
+--WebAppBoundary--
+
+?? status == 200
+?? js response.parsedBody.id == {{Upload.id}}
+
+###
+# @name GetImage
+GET {{host}}/{{Upload.id}}.jpg
+
+?? status == 200
+?? header Content-Type == image/jpeg
+?? header Cache-Control contains immutable
+
+###
+# @name GetMetadata
+GET {{host}}/{{Upload.id}}.json
+
+?? status == 200
+?? js response.parsedBody.osmUser == test-user
+?? js response.parsedBody.url endsWith .jpg
+
+###
+# @name GetThumbnail
+GET {{host}}/{{Upload.id}}/250px.jpg
+
+?? status == 200
+?? header Content-Type == image/jpeg
+
+###
+# @name GetThumbnailAgainIsServedFromDisk
+GET {{host}}/{{Upload.id}}/250px.jpg
+
+?? status == 200
+
+###
+# @name UnsupportedThumbnailWidth
+GET {{host}}/{{Upload.id}}/137px.jpg
+
+?? status == 400
+
+###
+# @name UnknownImage
+GET {{host}}/00000000000000000000000000000000.jpg
+
+?? status == 404
+
+###
+# @name MalformedIdIsNotFound
+GET {{host}}/not-an-id.jpg
+
+?? status == 404
+
+###
+# @name DeleteRejectsAnonymous
+DELETE {{host}}/api/images/{{Upload.id}}
+
+?? status == 401
+
+###
+# @name Delete
+DELETE {{host}}/api/images/{{Upload.id}}
+Authorization: Bearer {{token}}
+
+?? status == 204
+
+###
+# @name DeletedImageIsGone
+GET {{host}}/{{Upload.id}}.jpg
+
+?? status == 404
