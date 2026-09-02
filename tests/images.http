@@ -70,6 +70,149 @@ Content-Type: image/jpeg
 ?? js response.parsedBody.id == {{Upload.id}}
 
 ###
+# @name UploadRejectsStatedUploaderFromANonModerator
+POST {{host}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUser"
+
+someone-else
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUserId"
+
+12345
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 403
+
+###
+# @name AModeratorMayGiveTheDateWithoutNamingAnUploader
+POST {{host}}/api/images
+Authorization: Bearer TEST_ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="uploadedAt"
+
+2018-03-04T09:00:00Z
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 201
+?? js response.parsedBody.osmUser == test-admin
+?? js response.parsedBody.osmUserId == test-admin-id
+?? js response.parsedBody.uploadedAt == 2018-03-04T09:00:00Z
+
+###
+# @name CleanUpTheAnonymousOne
+DELETE {{host}}/api/images/{{AModeratorMayGiveTheDateWithoutNamingAnUploader.id}}
+Authorization: Bearer TEST_ADMIN_TOKEN
+
+?? status == 204
+
+###
+# @name UploadRejectsAnIdWithoutTheNameItBelongsTo
+POST {{host}}/api/images
+Authorization: Bearer TEST_ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUserId"
+
+12345
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 400
+
+###
+# @name ModeratorStatesWhoTheImageBelongsTo
+POST {{host}}/api/images
+Authorization: Bearer TEST_ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUser"
+
+GorALexeY
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUserId"
+
+357541
+--WebAppBoundary
+Content-Disposition: form-data; name="uploadedAt"
+
+2019-05-27T12:08:18Z
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 201
+?? js response.parsedBody.osmUser == GorALexeY
+?? js response.parsedBody.osmUserId == 357541
+?? js response.parsedBody.uploadedAt == 2019-05-27T12:08:18Z
+
+###
+# @name TheStatedUploaderCannotBeDeletedByTheModeratorsOwnToken
+DELETE {{host}}/api/images/{{ModeratorStatesWhoTheImageBelongsTo.id}}
+Authorization: Bearer TEST_ADMIN_TOKEN
+
+?? status == 204
+
+###
+# @name AnImageWhoseOsmAccountIsGoneIsCreditedByNameAlone
+POST {{host}}/api/images
+Authorization: Bearer TEST_ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="osmUser"
+
+VELOCITY_club
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 201
+?? js response.parsedBody.osmUser == VELOCITY_club
+?? js response.parsedBody.osmUserId == undefined
+
+###
+# @name ItCannotBeDeletedByAnyoneButAModerator
+DELETE {{host}}/api/images/{{AnImageWhoseOsmAccountIsGoneIsCreditedByNameAlone.id}}
+Authorization: Bearer {{token}}
+
+?? status == 403
+
+###
+# @name ButAModeratorCan
+DELETE {{host}}/api/images/{{AnImageWhoseOsmAccountIsGoneIsCreditedByNameAlone.id}}
+Authorization: Bearer TEST_ADMIN_TOKEN
+
+?? status == 204
+
+###
 # @name GetImage
 GET {{host}}/{{Upload.id}}.jpg
 
