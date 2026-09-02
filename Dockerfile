@@ -21,7 +21,7 @@ ENV STORAGE_DIR=/data/images
 VOLUME /data/images
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=3s \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --start-interval=1s \
   CMD wget -q --spider http://localhost:3000/health || exit 1
 
 CMD ["node", "dist/index.js"]
