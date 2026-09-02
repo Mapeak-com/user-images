@@ -231,6 +231,7 @@ GET {{host}}/{{Upload.id}}
 ?? body contains https://www.openstreetmap.org/user/test-user
 ?? body contains CC0-1.0
 ?? body contains og:image
+?? body contains rel="icon"
 
 ###
 # @name GetPageOfAnUnknownImage

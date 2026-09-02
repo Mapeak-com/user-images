@@ -17,6 +17,12 @@ export const config = {
         .map(width => Number(width.trim()))
         .filter(width => Number.isInteger(width) && width > 0),
     maxUploadBytes: Number(process.env.MAX_UPLOAD_BYTES ?? 20 * 1024 * 1024),
+    /**
+     * The icon the image pages show in a browser tab. It points at the site the instance belongs to
+     * rather than being served from here, since this service holds users' pictures and nothing of
+     * its own. Empty leaves the pages without one.
+     */
+    faviconUrl: process.env.FAVICON_URL ?? 'https://mapeak.com/content/favicons/favicon.ico',
     /** The license an upload is stored under when it does not state one of its own */
     defaultLicense: process.env.DEFAULT_LICENSE ?? 'CC0-1.0',
     /** OSM user ids that are allowed to delete images they did not upload, for moderation */

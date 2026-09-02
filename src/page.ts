@@ -94,13 +94,19 @@ function licenseHtml(license: string): string {
  * of an image taken from there links to - it shows the picture together with who took it and the
  * license it may be used under.
  */
+export type SiteSettings = {
+    thumbnailWidths: number[];
+    faviconUrl: string;
+};
+
 export function renderImagePage(
     metadata: ImageMetadata,
     format: ImageFormat,
     measured: MeasuredImage,
-    thumbnailWidths: number[]
+    site: SiteSettings
 ): string {
     const title = `Image by ${metadata.osmUser}`;
+    const { thumbnailWidths } = site;
     const largestWidth = thumbnailWidths.length > 0 ? Math.max(...thumbnailWidths) : undefined;
     const previewWidth = thumbnailWidths.find(width => width >= 960) ?? largestWidth;
     const previewUrl = previewWidth ? `${metadata.url}?width=${previewWidth}` : metadata.url;
@@ -127,7 +133,8 @@ export function renderImagePage(
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}">
-<link rel="canonical" href="${escapeHtml(pageUrl)}">
+<link rel="canonical" href="${escapeHtml(pageUrl)}">${site.faviconUrl ? `
+<link rel="icon" href="${escapeHtml(site.faviconUrl)}">` : ''}
 <meta property="og:type" content="article">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">

@@ -257,7 +257,10 @@ app.get(PAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => {
         // with itself the way a copy of them could.
         const format = formatOf(metadata);
         const measured = await measure(originalPath(id, format));
-        res.type('html').send(renderImagePage(metadata, format, measured, config.thumbnailWidths));
+        res.type('html').send(renderImagePage(metadata, format, measured, {
+            thumbnailWidths: config.thumbnailWidths,
+            faviconUrl: config.faviconUrl
+        }));
     } catch (error) {
         next(error);
     }
