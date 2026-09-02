@@ -59,6 +59,7 @@ sending those fields gets a 403.
 | `THUMBNAIL_WIDTHS` | `100,250,330,500,960,1920` | The widths this instance is willing to generate |
 | `MAX_UPLOAD_BYTES` | `20971520` | 20 MB |
 | `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license |
+| `FAVICON_URL` | Mapeak's | The icon the image pages show in a browser tab, empty for none |
 | `ADMIN_OSM_USER_IDS` | empty | OSM user ids allowed to delete images they did not upload |
 | `TEST_MODE` | `false` | Accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests |
 
