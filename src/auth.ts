@@ -44,6 +44,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         return next();
     }
 
+    if (config.testMode && token === 'TEST_ADMIN_TOKEN') {
+        req.user = { osmUserId: 'test-admin-id', osmUser: 'test-admin' };
+        return next();
+    }
+
     const cachedUser = cache.get(token);
     if (cachedUser) {
         req.user = cachedUser;

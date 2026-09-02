@@ -12,7 +12,8 @@ export type ImageMetadata = {
     url: string;
     /** The OSM display name of whoever took the picture, taken from the access token of the upload */
     osmUser: string;
-    osmUserId: string;
+    /** Absent for an imported image whose OSM account no longer exists, see parseAttribution */
+    osmUserId?: string;
     description?: string;
     /** When the picture was taken, as opposed to when it was uploaded */
     capturedAt?: string;

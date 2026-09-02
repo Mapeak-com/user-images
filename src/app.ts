@@ -6,7 +6,7 @@ import multer from 'multer';
 import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config.js';
-import { authenticate } from './auth.js';
+import { AuthenticatedUser, authenticate } from './auth.js';
 import { createThumbnail, probe } from './images.js';
 import {
     ID_PATTERN,
@@ -61,6 +61,49 @@ function parseLocation(body: Record<string, string>): { lat: number; lng: number
     return { lat, lng };
 }
 
+type Attribution = {
+    osmUser: string;
+    osmUserId?: string;
+    uploadedAt: string;
+};
+
+/**
+ * Who an image is credited to and when it was contributed.
+ *
+ * Both are taken from the access token and the clock, so an image can not be attributed to someone
+ * who did not send it. A moderator is the one exception, and only so that an archive that already
+ * exists somewhere else can be brought in with the people who actually took the pictures still on
+ * them - which is the whole point of moving it. What a moderator states is not verified.
+ *
+ * `osmUserId` may be left out there, and only there, because an account that has since been deleted
+ * has no id left to give - the name is still who took the picture and still who to credit. No token
+ * can match an image with no id on it, so only a moderator can ever remove one.
+ *
+ * `osmUser` may be left out too, and then the moderator is credited as usual. An archive holds
+ * pictures whose author it never recorded, and the date is still worth keeping even though there is
+ * nobody but the importer to put on them.
+ */
+function parseAttribution(body: Record<string, string>, user: AuthenticatedUser): Attribution | 'invalid' | 'forbidden' {
+    const stated = body.osmUser || body.osmUserId || body.uploadedAt;
+    if (!stated) {
+        return { osmUser: user.osmUser, osmUserId: user.osmUserId, uploadedAt: new Date().toISOString() };
+    }
+    if (!config.adminOsmUserIds.includes(user.osmUserId)) {
+        return 'forbidden';
+    }
+    if (body.osmUserId && !body.osmUser) {
+        return 'invalid';
+    }
+    if (body.uploadedAt && Number.isNaN(Date.parse(body.uploadedAt))) {
+        return 'invalid';
+    }
+    return {
+        osmUser: body.osmUser || user.osmUser,
+        osmUserId: body.osmUser ? (body.osmUserId || undefined) : user.osmUserId,
+        uploadedAt: body.uploadedAt || new Date().toISOString()
+    };
+}
+
 app.post('/api/images', authenticate, upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.file) {
@@ -78,6 +121,15 @@ app.post('/api/images', authenticate, upload.single('file'), async (req: Request
         if (body.capturedAt && Number.isNaN(Date.parse(body.capturedAt))) {
             return res.status(400).json({ message: 'capturedAt must be an ISO 8601 date' });
         }
+        const attribution = parseAttribution(body, req.user!);
+        if (attribution === 'forbidden') {
+            return res.status(403).json({ message: 'Only a moderator can state who an image belongs to' });
+        }
+        if (attribution === 'invalid') {
+            return res.status(400).json({
+                message: 'osmUserId needs the osmUser it belongs to, and uploadedAt must be an ISO 8601 date'
+            });
+        }
 
         const id = idOf(req.file.buffer);
         const existingMetadata = await readMetadata(id);
@@ -89,13 +141,13 @@ app.post('/api/images', authenticate, upload.single('file'), async (req: Request
             id,
             format: probed.format,
             url: urlOf(id, probed.format),
-            osmUser: req.user!.osmUser,
-            osmUserId: req.user!.osmUserId,
+            osmUser: attribution.osmUser,
+            osmUserId: attribution.osmUserId,
             description: body.description || undefined,
             capturedAt: body.capturedAt || undefined,
             location,
             license: body.license || config.defaultLicense,
-            uploadedAt: new Date().toISOString(),
+            uploadedAt: attribution.uploadedAt,
             width: probed.width,
             height: probed.height,
             size: req.file.buffer.length

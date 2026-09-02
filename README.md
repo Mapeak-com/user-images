@@ -41,6 +41,12 @@ The uploader is always taken from the OSM access token and never from a field in
 image cannot be attributed to someone who did not send it. **The caller must forward the end user's
 OSM token**, which is the token the site already holds in order to edit OSM on their behalf.
 
+A moderator - an account listed in `ADMIN_OSM_USER_IDS` - is the one exception, and may send
+`osmUser`, `osmUserId` and `uploadedAt` along with the file. That exists so an archive that already
+lives somewhere else can be moved here with the people who actually took the pictures still on them,
+which is the only reason to move it at all. What a moderator states is not verified. Anyone else
+sending those fields gets a 403.
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -52,13 +58,20 @@ OSM token**, which is the token the site already holds in order to edit OSM on t
 | `MAX_UPLOAD_BYTES` | `20971520` | 20 MB |
 | `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license |
 | `ADMIN_OSM_USER_IDS` | empty | OSM user ids allowed to delete images they did not upload |
-| `TEST_MODE` | `false` | Accepts `TEST_TOKEN` as a login, for the http tests |
+| `TEST_MODE` | `false` | Accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests |
 
 Thumbnail widths are an allow list rather than anything a caller asks for, because an arbitrary width
 would let anyone fill the disk with derivatives.
 
 Every size of a picture is the same url with one thing varied - whoever holds `<id>.jpg` asks for a
 smaller one by appending `?width=`, rather than having to know how to spell a second kind of url.
+
+## To run the tests
+
+The http tests need an instance to talk to, with test mode on and the test moderator listed:
+
+    TEST_MODE=true ADMIN_OSM_USER_IDS=test-admin-id npm start
+    npm run test:http
 
 ## To build locally:
 
