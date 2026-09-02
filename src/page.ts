@@ -36,8 +36,7 @@ function rowHtml(label: string, value?: string): string {
 
 function coordinatesHtml(location: { lat: number; lng: number }): string {
     const { lat, lng } = location;
-    return `<a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lng}`
-        + `#map=17/${lat}/${lng}">${lat}, ${lng}</a>`;
+    return `<a href="https://mapeak.com/map/15/${lat}/${lng}"> ${lat}, ${lng} </a>`;
 }
 
 /** A date is shown to the day, since the time of day is only ever noise on a page like this */
@@ -62,7 +61,7 @@ function exifHtml(exif: MeasuredImage['exif']): string {
     ].filter(Boolean).join(' &middot; ');
     const focalLength = exif.focalLength
         ? `${exif.focalLength} mm`
-            + (exif.focalLengthIn35mm ? ` (${exif.focalLengthIn35mm} mm equivalent)` : '')
+        + (exif.focalLengthIn35mm ? ` (${exif.focalLengthIn35mm} mm equivalent)` : '')
         : undefined;
 
     const rows = [
@@ -77,8 +76,7 @@ function exifHtml(exif: MeasuredImage['exif']): string {
     ].filter(Boolean);
 
     return rows.length === 0 ? '' : `
-<h2>From the camera</h2>
-<p class="note">Read out of the picture itself, rather than given when it was uploaded.</p>
+<h2>From the camera (exif data)</h2>
 <dl>
 ${rows.join('\n')}
 </dl>`;
@@ -157,11 +155,11 @@ dd { margin: 0; }
 <h1>${escapeHtml(title)}</h1>
 <dl>
 ${[
-        rowHtml('Author', authorHtml(metadata.osmUser, metadata.osmUserId)),
-        rowHtml('License', licenseHtml(metadata.license)),
-        rowHtml('Location', metadata.location && coordinatesHtml(metadata.location)),
-        rowHtml('Uploaded', day(metadata.uploadedAt))
-    ].filter(Boolean).join('\n')}
+            rowHtml('Author', authorHtml(metadata.osmUser, metadata.osmUserId)),
+            rowHtml('License', licenseHtml(metadata.license)),
+            rowHtml('Location', metadata.location && coordinatesHtml(metadata.location)),
+            rowHtml('Uploaded', day(metadata.uploadedAt))
+        ].filter(Boolean).join('\n')}
 </dl>${exifHtml(measured.exif)}
 </body>
 </html>
