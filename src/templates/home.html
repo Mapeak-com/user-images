@@ -39,11 +39,13 @@
 }
 * { box-sizing: border-box; }
 html { background: var(--paper); color: var(--ink); }
-body { margin: 0; font: 1.0625rem/1.65 var(--serif); position: relative; overflow-x: hidden; }
+body { margin: 0; font: 1.0625rem/1.65 var(--serif); position: relative; }
 a { color: inherit; text-decoration-color: var(--survey); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
 a:hover { color: var(--survey); }
 code { font: 0.85em var(--mono); overflow-wrap: anywhere; }
-.contours { position: absolute; top: -2rem; right: -6rem; width: min(38rem, 90vw); fill: none; stroke: var(--survey); stroke-width: 1; opacity: 0.22; pointer-events: none; }
+/* The contours hang off the edge of the page, so they sit in a box of their own that clips them rather than widening the page */
+.backdrop { position: absolute; inset: 0 0 auto 0; height: 36rem; overflow: hidden; pointer-events: none; }
+.contours { position: absolute; top: -2rem; right: -6rem; width: min(38rem, 90vw); fill: none; stroke: var(--survey); stroke-width: 1; opacity: 0.22; }
 .page { position: relative; max-width: 46rem; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
 .mast { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; padding-bottom: 0.6rem; border-bottom: 2px solid var(--ink); font: 0.8rem/1.4 var(--mono); letter-spacing: 0.02em; }
 .mast span:last-child { color: var(--muted); }
@@ -79,6 +81,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 1rem; font-size: 0.9rem
 </style>
 </head>
 <body>
+<div class="backdrop">
 <svg class="contours" viewBox="0 0 520 420" aria-hidden="true" focusable="false">
 <path d="M338 110 L339 112 L340 114 L340 116 L339 118 L338 120 L337 122 L336 124 L334 126 L332 127 L330 129 L328 130 L326 131 L324 132 L322 133 L320 134 L318 135 L316 136 L314 136 L311 137 L309 137 L307 136 L304 136 L302 135 L300 134 L298 134 L296 133 L294 132 L293 132 L291 132 L289 132 L286 132 L284 132 L281 132 L279 132 L276 132 L273 132 L270 131 L268 130 L266 128 L264 126 L263 124 L263 122 L263 120 L263 118 L264 116 L265 114 L266 112 L267 110 L268 108 L268 107 L269 105 L269 103 L270 102 L270 100 L270 98 L271 97 L272 95 L273 93 L274 92 L275 90 L277 89 L278 88 L280 87 L282 86 L284 85 L286 84 L289 83 L291 82 L293 81 L295 81 L298 80 L300 79 L303 79 L305 79 L308 79 L310 80 L312 81 L314 82 L316 84 L318 86 L319 88 L320 90 L320 92 L321 93 L321 95 L322 97 L323 98 L324 99 L325 100 L327 101 L328 102 L331 103 L333 105 L335 106 L336 108Z"/>
 <path d="M373 110 L375 114 L375 118 L375 122 L374 126 L371 129 L369 133 L366 136 L362 139 L359 141 L355 144 L351 146 L348 148 L344 150 L340 152 L337 154 L333 155 L329 157 L325 158 L320 158 L316 158 L312 158 L308 157 L304 156 L300 155 L296 154 L293 153 L289 153 L286 153 L282 153 L278 153 L273 153 L269 153 L264 154 L258 153 L253 153 L248 151 L244 150 L240 147 L237 144 L235 140 L233 136 L233 132 L234 128 L235 124 L236 120 L238 117 L240 113 L241 110 L243 107 L243 104 L244 101 L244 98 L244 95 L244 92 L244 88 L245 85 L246 81 L248 78 L250 75 L252 72 L255 69 L259 67 L262 65 L266 63 L270 62 L274 60 L278 59 L282 57 L286 56 L291 54 L295 53 L300 53 L305 52 L309 53 L314 54 L318 55 L322 58 L326 60 L329 63 L331 67 L333 71 L334 74 L336 78 L337 81 L338 83 L340 86 L342 88 L345 89 L348 91 L352 93 L356 95 L360 97 L364 100 L368 103 L371 106Z"/>
@@ -90,6 +93,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 1rem; font-size: 0.9rem
 <path d="M576 110 L566 124 L555 137 L542 148 L529 159 L516 169 L505 178 L495 187 L487 196 L480 206 L474 217 L468 228 L461 239 L454 251 L445 262 L435 272 L424 282 L411 290 L396 296 L381 301 L365 305 L349 307 L333 309 L316 310 L300 310 L284 310 L267 310 L250 310 L233 309 L216 307 L199 305 L183 300 L167 294 L153 286 L141 276 L131 264 L124 251 L119 237 L116 223 L115 209 L115 195 L116 183 L116 171 L115 160 L111 150 L106 141 L99 131 L89 121 L79 110 L68 98 L57 84 L47 70 L40 54 L36 38 L36 22 L39 7 L46 -7 L56 -20 L70 -31 L85 -41 L102 -48 L120 -54 L138 -59 L156 -63 L173 -66 L190 -69 L206 -71 L222 -74 L238 -76 L254 -77 L269 -78 L285 -77 L300 -76 L315 -73 L329 -69 L343 -63 L356 -57 L368 -51 L380 -44 L391 -38 L403 -32 L415 -27 L428 -23 L442 -19 L458 -16 L475 -12 L493 -8 L511 -3 L530 4 L547 13 L562 23 L574 36 L582 49 L587 64 L587 80 L584 95Z"/>
 <path d="M596 110 L583 125 L570 138 L556 151 L543 162 L531 173 L521 183 L513 194 L507 206 L502 218 L497 231 L492 245 L486 259 L478 273 L469 286 L458 299 L444 310 L429 319 L412 326 L394 331 L375 335 L357 337 L338 338 L319 339 L300 339 L281 338 L263 337 L244 336 L225 333 L207 330 L188 326 L171 319 L155 311 L141 301 L129 289 L119 275 L112 260 L107 245 L104 230 L103 216 L101 202 L100 189 L97 177 L92 166 L85 156 L76 146 L65 135 L51 123 L37 110 L24 96 L11 80 L1 62 L-5 45 L-8 26 L-6 9 L1 -8 L12 -23 L26 -36 L43 -48 L62 -57 L83 -64 L103 -69 L124 -74 L143 -77 L162 -81 L181 -84 L198 -87 L215 -89 L232 -92 L249 -94 L266 -95 L283 -96 L300 -95 L317 -92 L333 -88 L348 -84 L363 -78 L377 -72 L391 -66 L405 -60 L419 -55 L434 -51 L450 -47 L468 -43 L486 -39 L506 -35 L527 -29 L547 -22 L566 -13 L583 -2 L598 11 L608 26 L614 43 L616 60 L613 77 L606 94Z"/>
 </svg>
+</div>
 <div class="page">
 <header class="mast"><span>{{host}}</span><span>the image store behind Mapeak</span></header>
 <main>
