@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import * as OpenApiValidator from 'express-openapi-validator';
+import { OpenAPIV3 } from 'express-openapi-validator/dist/framework/types.js';
 import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config.js';
@@ -38,14 +40,30 @@ const PAGE_ROUTE = new RegExp(`^/(${ID_PATTERN})$`);
 /** A picture at a given url can never change, so whoever holds it can keep it forever */
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: config.maxUploadBytes, files: 1 }
-});
-
 export const app = express();
 app.use(cors());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
+
+// Whoever uploads is known before the upload is read, so an anonymous one is refused without its
+// file ever being held in memory - the validator below is what reads it.
+app.post('/api/images', authenticate);
+
+/**
+ * Every request is checked against the spec before it reaches a route, so the spec is the one place
+ * that says what a well formed request is. Who may do what is still decided by the routes, and the
+ * token by `authenticate` - the spec only says that one is needed.
+ */
+app.use(OpenApiValidator.middleware({
+    // The validator resolves the spec in place, and Swagger UI is still serving the same object
+    apiSpec: structuredClone(apiDocs) as OpenAPIV3.DocumentV3,
+    validateRequests: { coerceTypes: true },
+    validateResponses: false,
+    validateSecurity: false,
+    fileUploader: {
+        storage: multer.memoryStorage(),
+        limits: { fileSize: config.maxUploadBytes, files: 1 }
+    }
+}));
 
 /** What someone surfing to the bare address sees - what this is, who it is for and where its code is */
 app.get('/', (req: Request, res: Response) => {
@@ -75,16 +93,28 @@ app.get('/favicon.ico', (req: Request, res: Response) => {
 
 // --- Upload ---
 
-function parseLocation(body: Record<string, string>): { lat: number; lng: number } | undefined | 'invalid' {
+/** The fields of an upload, as the validator leaves them - checked against the spec and coerced */
+type UploadBody = {
+    lat?: number;
+    lng?: number;
+    license?: string;
+    osmUser?: string;
+    osmUserId?: string;
+    uploadedAt?: string;
+};
+
+/**
+ * The spec has already made each coordinate a number in range. What it can not say is that they only
+ * mean something together, so a lone one is refused here.
+ */
+function parseLocation(body: UploadBody): { lat: number; lng: number } | undefined | 'invalid' {
     if (body.lat === undefined && body.lng === undefined) {
         return undefined;
     }
-    const lat = Number(body.lat);
-    const lng = Number(body.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    if (body.lat === undefined || body.lng === undefined) {
         return 'invalid';
     }
-    return { lat, lng };
+    return { lat: body.lat, lng: body.lng };
 }
 
 type Attribution = {
@@ -109,7 +139,7 @@ type Attribution = {
  * pictures whose author it never recorded, and the date is still worth keeping even though there is
  * nobody but the importer to put on them.
  */
-function parseAttribution(body: Record<string, string>, user: AuthenticatedUser): Attribution | 'invalid' | 'forbidden' {
+function parseAttribution(body: UploadBody, user: AuthenticatedUser): Attribution | 'invalid' | 'forbidden' {
     const stated = body.osmUser || body.osmUserId || body.uploadedAt;
     if (!stated) {
         return { osmUser: user.osmUser, osmUserId: user.osmUserId, uploadedAt: new Date().toISOString() };
@@ -120,9 +150,6 @@ function parseAttribution(body: Record<string, string>, user: AuthenticatedUser)
     if (body.osmUserId && !body.osmUser) {
         return 'invalid';
     }
-    if (body.uploadedAt && Number.isNaN(Date.parse(body.uploadedAt))) {
-        return 'invalid';
-    }
     return {
         osmUser: body.osmUser || user.osmUser,
         osmUserId: body.osmUser ? (body.osmUserId || undefined) : user.osmUserId,
@@ -130,31 +157,30 @@ function parseAttribution(body: Record<string, string>, user: AuthenticatedUser)
     };
 }
 
-app.post('/api/images', authenticate, upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
+app.post('/api/images', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'A file is required' });
-        }
-        const probed = await probe(req.file.buffer);
+        // The spec requires the file and allows only one, so the validator has already made sure it is there
+        const file = (req.files as Express.Multer.File[]).find(uploaded => uploaded.fieldname === 'file')!;
+        const probed = await probe(file.buffer);
         if (!probed) {
             return res.status(400).json({ message: 'The file is not a jpeg, a png or a webp' });
         }
-        const body = req.body as Record<string, string>;
+        const body = req.body as UploadBody;
         const location = parseLocation(body);
         if (location === 'invalid') {
-            return res.status(400).json({ message: 'lat and lng must both be valid coordinates' });
+            return res.status(400).json({ message: 'lat and lng must be sent together' });
         }
+        // The spec only lets a permissive license through, and the default is checked when the service starts
+        const license = body.license || config.defaultLicense;
         const attribution = parseAttribution(body, req.user!);
         if (attribution === 'forbidden') {
             return res.status(403).json({ message: 'Only a moderator can state who an image belongs to' });
         }
         if (attribution === 'invalid') {
-            return res.status(400).json({
-                message: 'osmUserId needs the osmUser it belongs to, and uploadedAt must be an ISO 8601 date'
-            });
+            return res.status(400).json({ message: 'osmUserId needs the osmUser it belongs to' });
         }
 
-        const id = idOf(req.file.buffer);
+        const id = idOf(file.buffer);
         const existingMetadata = await readMetadata(id);
         if (existingMetadata) {
             return res.status(200).json(existingMetadata);
@@ -166,10 +192,10 @@ app.post('/api/images', authenticate, upload.single('file'), async (req: Request
             osmUser: attribution.osmUser,
             osmUserId: attribution.osmUserId,
             location,
-            license: body.license || config.defaultLicense,
+            license,
             uploadedAt: attribution.uploadedAt
         };
-        await saveImage(req.file.buffer, metadata);
+        await saveImage(file.buffer, metadata);
         res.status(201).json(metadata);
     } catch (error) {
         next(error);
@@ -321,7 +347,8 @@ app.get(IMAGE_ROUTE, async (req: Request, res: Response, next: NextFunction) => 
 // --- Error Handling ---
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    if (err?.code === 'LIMIT_FILE_SIZE') {
+    // The validator reads the upload, and turns a file over the limit into a 413 of its own
+    if (err?.status === 413) {
         return res.status(413).json({ message: `The image is larger than ${config.maxUploadBytes} bytes` });
     }
     res.status(err.status || 500).json({

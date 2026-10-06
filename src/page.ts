@@ -11,7 +11,7 @@ import { ImageFormat, ImageMetadata } from './storage.js';
 const LICENSE_URLS: Record<string, string> = {
     'CC0-1.0': 'https://creativecommons.org/publicdomain/zero/1.0/',
     'CC-BY-4.0': 'https://creativecommons.org/licenses/by/4.0/',
-    'CC-BY-SA-4.0': 'https://creativecommons.org/licenses/by-sa/4.0/'
+    'CC-BY-3.0': 'https://creativecommons.org/licenses/by/3.0/'
 };
 
 /** Everything on the page comes from whoever uploaded the picture, so none of it can be trusted as markup */
@@ -130,7 +130,9 @@ export function renderImagePage(
 export function renderHomePage(publicBaseUrl: string, site: SiteSettings): string {
     return render(HOME_TEMPLATE, {
         publicBaseUrl,
+        host: new URL(publicBaseUrl).host,
         faviconUrl: site.faviconUrl,
-        thumbnailWidth: site.thumbnailWidths[0] ?? 250
+        thumbnailWidth: site.thumbnailWidths.find(width => width >= 250) ?? site.thumbnailWidths[0] ?? 250,
+        widths: site.thumbnailWidths.join(', ')
     });
 }

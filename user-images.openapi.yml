@@ -14,6 +14,26 @@ servers:
   - url: http://localhost:3000
     description: Local
 paths:
+  /:
+    get:
+      tags:
+        - Pages
+      summary: Tells whoever surfs to the bare address what this is and where its code is
+      responses:
+        '200':
+          description: The page
+          content:
+            text/html: {}
+  /favicon.ico:
+    get:
+      tags:
+        - Pages
+      summary: Redirects to the icon of the site this instance belongs to
+      responses:
+        '301':
+          description: The icon
+        '404':
+          description: The instance has no icon
   /health:
     get:
       tags:
@@ -63,14 +83,21 @@ paths:
                 lat:
                   type: number
                   format: double
+                  minimum: -90
+                  maximum: 90
                   description: The latitude the image belongs to, sent together with lng
                 lng:
                   type: number
                   format: double
+                  minimum: -180
+                  maximum: 180
                   description: The longitude the image belongs to, sent together with lat
                 license:
                   type: string
-                  description: The SPDX id of the license, defaults to the one of the instance
+                  enum: [CC0-1.0, CC-BY-4.0, CC-BY-3.0]
+                  description: |
+                    The SPDX id of the license, defaults to the one of the instance. Only permissive
+                    licenses are accepted, so that whatever shows a picture is free to.
                 osmUser:
                   type: string
                   description: |
@@ -128,7 +155,25 @@ paths:
           description: The image belongs to someone else
         '404':
           description: No such image
-  /{id}.{format}:
+  /{id}.json:
+    get:
+      tags:
+        - Images
+      summary: Serves the metadata of an image, including who should be credited for it
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: The metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageMetadata'
+        '404':
+          description: No such image
+  # One path per format rather than a {format} parameter, since the validator would otherwise match
+  # /{id}.json as an image in the format "json" and refuse it. The anchor keeps it written once.
+  /{id}.jpg: &image
     get:
       tags:
         - Images
@@ -141,7 +186,6 @@ paths:
         rejected.
       parameters:
         - $ref: '#/components/parameters/Id'
-        - $ref: '#/components/parameters/Format'
         - name: width
           in: query
           required: false
@@ -171,22 +215,8 @@ paths:
                       type: integer
         '404':
           description: No such image
-  /{id}.json:
-    get:
-      tags:
-        - Images
-      summary: Serves the metadata of an image, including who should be credited for it
-      parameters:
-        - $ref: '#/components/parameters/Id'
-      responses:
-        '200':
-          description: The metadata
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImageMetadata'
-        '404':
-          description: No such image
+  /{id}.png: *image
+  /{id}.webp: *image
   /{id}:
     get:
       tags:
@@ -215,14 +245,6 @@ components:
       schema:
         type: string
         pattern: '^[0-9a-f]{32}$'
-    Format:
-      name: format
-      in: path
-      required: true
-      description: The format the image is stored in
-      schema:
-        type: string
-        enum: [jpg, png, webp]
   securitySchemes:
     osmAccessToken:
       type: http

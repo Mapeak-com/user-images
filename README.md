@@ -3,8 +3,8 @@
 A microservice that stores the images users attach to points of interest, and serves them at a stable
 url that an OSM entity can hold in its `image` tag.
 
-It exists so that Mapeak and Israel Hiking Map stop depending on someone else's image host for the
-pictures their users contribute.
+It exists so that a site whose users contribute pictures to OSM does not have to depend on someone
+else's image host for them.
 
 ## How an image is addressed
 
@@ -51,6 +51,15 @@ lives somewhere else can be moved here with the people who actually took the pic
 which is the only reason to move it at all. What a moderator states is not verified. Anyone else
 sending those fields gets a 403.
 
+## Licenses
+
+An upload may only be stored under `CC0-1.0`, `CC-BY-4.0` or `CC-BY-3.0`, and anything else is
+refused with a 400. The list is closed and holds permissive licenses alone, because a picture is only
+worth holding in an OSM tag if whoever reads it there is free to show it. Share alike and non
+commercial licenses put conditions on whatever shows the picture, and a picture already in a tag can
+not be taken back quietly. The list is the `license` enum in `user-images.openapi.yml`. A license added
+there also wants its deed in `LICENSE_URLS` in `page.ts`, or its pages show it as plain text.
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -60,7 +69,7 @@ sending those fields gets a 403.
 | `PUBLIC_BASE_URL` | `http://localhost:3000` | The address used to build the url an OSM entity will hold |
 | `THUMBNAIL_WIDTHS` | `100,250,330,500,960,1920` | The widths this instance is willing to generate |
 | `MAX_UPLOAD_BYTES` | `20971520` | 20 MB |
-| `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license |
+| `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license, must be one of the accepted ones |
 | `FAVICON_URL` | Mapeak's | The icon a browser tab shows, empty for none |
 | `ADMIN_OSM_USER_IDS` | empty | OSM user ids allowed to delete images they did not upload |
 | `TEST_MODE` | `false` | Accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests |
@@ -69,7 +78,7 @@ Thumbnail widths are an allow list rather than anything a caller asks for, becau
 would let anyone fill the disk with derivatives.
 
 A width at least as wide as the picture is the picture, and resizing it would only write a second
-copy of the same image - the site already caps what it uploads at 1920, so asking for 1920 back would
+copy of the same image - a client that already caps what it uploads at 1920 and asks for 1920 back would
 otherwise re-encode nearly every picture into a derivative of its own size. Those get a name under
 `thumb` all the same, hard linked to the original, so the front end still serves every size straight
 from disk while the bytes are stored once.
@@ -98,8 +107,7 @@ Or without docker:
     npm run build
     npm start
 
-Note that the `user-data` service also listens on 3000, so if you run the Site's docker compose you
-will want `PORT=3100` here.
+If something else on the machine already listens on 3000, set `PORT` to another one.
 
 ## In production
 

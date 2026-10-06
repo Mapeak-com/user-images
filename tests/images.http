@@ -130,6 +130,50 @@ Content-Type: image/jpeg
 ?? status == 400
 
 ###
+# @name UploadRejectsALicenseThatIsNotPermissive
+POST {{host}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="license"
+
+CC-BY-SA-4.0
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 400
+?? js response.parsedBody.errors[0].path == /body/license
+
+###
+# @name UploadRejectsALatitudeOutOfRange
+POST {{host}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="lat"
+
+91
+--WebAppBoundary
+Content-Disposition: form-data; name="lng"
+
+35
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="other.jpg"
+Content-Type: image/jpeg
+
+< ./fixtures/other.jpg
+--WebAppBoundary--
+
+?? status == 400
+?? js response.parsedBody.errors[0].path == /body/lat
+
+###
 # @name ModeratorStatesWhoTheImageBelongsTo
 POST {{host}}/api/images
 Authorization: Bearer TEST_ADMIN_TOKEN
@@ -283,10 +327,10 @@ GET {{host}}/00000000000000000000000000000000.jpg
 ?? status == 404
 
 ###
-# @name MalformedIdIsNotFound
+# @name MalformedIdIsRejected
 GET {{host}}/not-an-id.jpg
 
-?? status == 404
+?? status == 400
 
 ###
 # @name DeleteRejectsAnonymous

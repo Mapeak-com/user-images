@@ -33,3 +33,4 @@ export const config = {
     /** Accepts "TEST_TOKEN" as a valid login, so that the http tests can run without an OSM account */
     testMode: process.env.TEST_MODE === 'true'
 };
+
