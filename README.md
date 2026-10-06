@@ -14,32 +14,33 @@ The id of an image is the hash of its bytes, truncated to 32 hexadecimal charact
 https://images.mapeak.com/3a7f9c2e1b4d0a95f60c2d3e4f501b6c.jpg
 ```
 
-Two consequences fall out of that, and both are load bearing:
+- **The same picture uploaded twice gets the same id**, so uploading it again returns the existing
+  image rather than storing a second copy.
+- **The bytes behind a url never change**, so everything is served `immutable` and can be cached
+  forever, by browsers and by apps.
 
-- **The same picture uploaded twice gets the same id**, so uploading it again is a no-op rather than a
-  second copy.
-- **The bytes behind a url can never change**, so everything is served `immutable` and can be cached
-  forever, by browsers and by the app.
-
-The url holds the id alone. Where the file actually sits is derived from the id, in exactly two
-places - `storage.ts` and the nginx config - so the layout on disk can be re-shaped later without a
-single OSM tag changing.
+Every size of a picture is the same url with `?width=` appended, so whoever holds `<id>.jpg` never has
+to build a second kind of url.
 
 ## Endpoints
 
 | | |
 |---|---|
 | `GET /` | A page telling whoever surfs to the bare address what this is and where its code is |
-| `POST /api/images` | Upload. Needs an OSM access token; the uploader is taken from it |
+| `POST /api/images` | Upload. Needs an OSM access token, the uploader is taken from it |
 | `DELETE /api/images/:id` | Delete, for the uploader or a moderator |
-| `GET /:id.jpg` | The original |
-| `GET /:id.jpg?width=250` | A thumbnail, generated on the first request and then kept |
+| `GET /:id.jpg` | The original, byte for byte as it was uploaded (also `.png` and `.webp`) |
+| `GET /:id.jpg?width=250` | A thumbnail, at one of the widths in `THUMBNAIL_WIDTHS` |
 | `GET /:id.json` | The metadata, including who should be credited |
-| `GET /:id` | A page showing the picture, its credit, its license and what its camera recorded |
-| `GET /favicon.ico` | Redirects to the icon of the site this instance belongs to |
-| `GET /:id` | The page of the image - the picture, who took it and the license, this is what a credit links to |
+| `GET /:id` | The page of the image: the picture, who took it, its license and what its camera recorded. This is what a credit should link to |
+| `GET /favicon.ico` | Redirects to `FAVICON_URL` |
 | `GET /health` | Liveness |
-| `GET /api-docs` | Swagger UI for `user-images.openapi.yml` |
+| `GET /api-docs` | Swagger UI, the full description of every request and response |
+
+Every request is validated against the API description, and a malformed one is refused with a 400
+that says which field is wrong.
+
+### Who an image is credited to
 
 The uploader is always taken from the OSM access token and never from a field in the request, so an
 image cannot be attributed to someone who did not send it. **The caller must forward the end user's
@@ -47,72 +48,53 @@ OSM token**, which is the token the site already holds in order to edit OSM on t
 
 A moderator - an account listed in `ADMIN_OSM_USER_IDS` - is the one exception, and may send
 `osmUser`, `osmUserId` and `uploadedAt` along with the file. That exists so an archive that already
-lives somewhere else can be moved here with the people who actually took the pictures still on them,
-which is the only reason to move it at all. What a moderator states is not verified. Anyone else
-sending those fields gets a 403.
+lives somewhere else can be moved here with the people who actually took the pictures still on them.
+What a moderator states is not verified. Anyone else sending those fields gets a 403.
 
 ## Licenses
 
 An upload may only be stored under `CC0-1.0`, `CC-BY-4.0` or `CC-BY-3.0`, and anything else is
-refused with a 400. The list is closed and holds permissive licenses alone, because a picture is only
-worth holding in an OSM tag if whoever reads it there is free to show it. Share alike and non
-commercial licenses put conditions on whatever shows the picture, and a picture already in a tag can
-not be taken back quietly. The list is the `license` enum in `user-images.openapi.yml`. A license added
-there also wants its deed in `LICENSE_URLS` in `page.ts`, or its pages show it as plain text.
+refused with a 400. An upload that does not state one is stored under `DEFAULT_LICENSE`.
+
+The list is closed and holds permissive licenses alone, because a picture is only worth holding in an
+OSM tag if whoever reads it there is free to show it. Share alike and non commercial licenses put
+conditions on whatever shows the picture, and a picture already in a tag cannot be taken back quietly.
 
 ## Configuration
 
+Everything is set through environment variables, and every one of them is optional.
+
 | Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | `3000` | |
-| `STORAGE_DIR` | `./data` | Where images, metadata and thumbnails live |
-| `PUBLIC_BASE_URL` | `http://localhost:3000` | The address used to build the url an OSM entity will hold |
-| `THUMBNAIL_WIDTHS` | `100,250,330,500,960,1920` | The widths this instance is willing to generate |
-| `MAX_UPLOAD_BYTES` | `20971520` | 20 MB |
-| `DEFAULT_LICENSE` | `CC0-1.0` | Used when an upload does not state a license, must be one of the accepted ones |
-| `FAVICON_URL` | Mapeak's | The icon a browser tab shows, empty for none |
-| `ADMIN_OSM_USER_IDS` | empty | OSM user ids allowed to delete images they did not upload |
-| `TEST_MODE` | `false` | Accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests |
+| `PORT` | `3000` | The port the service listens on |
+| `STORAGE_DIR` | `./data`, `/data/images` in the Docker image | Where images, metadata and thumbnails are kept. This directory is the whole state of the service |
+| `PUBLIC_BASE_URL` | `http://localhost:3000` | The address the images are served from, used to build the url an OSM entity will hold. Set it to the public address in production, without a trailing slash |
+| `THUMBNAIL_WIDTHS` | `100,250,330,500,960,1920` | The widths, in pixels and separated by commas, that `?width=` may ask for. Any other width is refused, so that nobody can fill the disk with sizes no one uses |
+| `MAX_UPLOAD_BYTES` | `20971520` (20 MB) | The largest file an upload may be. A larger one is refused with a 413 |
+| `DEFAULT_LICENSE` | `CC0-1.0` | The license an upload is stored under when it does not state one. One of `CC0-1.0`, `CC-BY-4.0` or `CC-BY-3.0`, the [licenses](#licenses) an upload may state |
+| `FAVICON_URL` | `https://mapeak.com/content/favicons/favicon.ico` | The icon a browser tab shows for the pages and pictures of this instance. Empty for none |
+| `ADMIN_OSM_USER_IDS` | empty | OSM user ids, separated by commas, of the moderators. A moderator may delete any image and state who an uploaded image belongs to |
+| `TEST_MODE` | `false` | `true` accepts `TEST_TOKEN` and `TEST_ADMIN_TOKEN` as logins, for the http tests. **Never set it in production**, it lets anyone upload and delete |
 
-Thumbnail widths are an allow list rather than anything a caller asks for, because an arbitrary width
-would let anyone fill the disk with derivatives.
+## Running it
 
-A width at least as wide as the picture is the picture, and resizing it would only write a second
-copy of the same image - a client that already caps what it uploads at 1920 and asks for 1920 back would
-otherwise re-encode nearly every picture into a derivative of its own size. Those get a name under
-`thumb` all the same, hard linked to the original, so the front end still serves every size straight
-from disk while the bytes are stored once.
-
-Every size of a picture is the same url with one thing varied - whoever holds `<id>.jpg` asks for a
-smaller one by appending `?width=`, rather than having to know how to spell a second kind of url.
-
-## To run the tests
-
-The http tests need an instance to talk to, with test mode on and the test moderator listed:
-
-    TEST_MODE=true ADMIN_OSM_USER_IDS=test-admin-id npm start
-    npm run test:http
-
-## To build locally:
+With Docker:
 
     docker build . -t mapeak/user-images
-
-## To run locally:
-
     docker run --rm -it -p 3000:3000 -v user-images:/data/images -e PUBLIC_BASE_URL=http://localhost:3000 mapeak/user-images
 
-Or without docker:
+Or without:
 
     npm install
     npm run build
     npm start
 
-If something else on the machine already listens on 3000, set `PORT` to another one.
+If the port is already taken the service says so and exits, set `PORT` to another one.
 
 ## In production
 
 nginx serves the originals and the already generated thumbnails straight from disk, and only reaches
-the service for uploads and for a thumbnail that does not exist yet. The read path therefore has no
+the service for uploads, pages and a thumbnail that does not exist yet. The read path therefore has no
 application in it at all.
 
 ```nginx
@@ -122,8 +104,8 @@ server {
     root /srv/user-images;
     client_max_body_size 20m;
 
-    # The url holds the id alone, the fan out on disk is derived here. A thumbnail is served from
-    # disk once it exists, and generated by the service the first time it is asked for.
+    # A picture, its metadata or an already generated thumbnail is served from disk, and anything
+    # missing is handed to the service, which generates a thumbnail the first time it is asked for.
     location ~ "^/(?<bucket>[0-9a-f]{2})(?<rest>[0-9a-f]{30})\.(?<ext>jpg|png|webp|json)$" {
         expires max;
         add_header Cache-Control "public, immutable";
@@ -145,33 +127,11 @@ server {
 }
 ```
 
-`root` must point at the same directory the service has as `STORAGE_DIR`.
+`root` must point at the same directory the service has as `STORAGE_DIR`, and `client_max_body_size`
+should be at least `MAX_UPLOAD_BYTES`.
 
-## Storage layout
+### Backups
 
-```
-<STORAGE_DIR>/
-  0e/
-    0e3c1efd4bcae001346e399ff9c6d6c3.jpg     the bytes exactly as they were uploaded
-    0e3c1efd4bcae001346e399ff9c6d6c3.json    the metadata
-  thumb/
-    0e/
-      0e3c1efd4bcae001346e399ff9c6d6c3/
-        250px.jpg                              served for ?width=250
-        1920px.jpg                             a link to the original, when it is already narrower
-```
-
-256 buckets, which keeps a directory at a few hundred images for a hundred thousand of them, and at a
-few thousand for a million. `thumb` can never collide with a bucket, since a bucket is two hex
-characters. Everything under `thumb` can be deleted at any time and will be regenerated on demand.
-
-The metadata holds only what cannot be worked out from the picture: what the uploader said about it,
-and what this service established about who sent it and when. The format, the size in pixels and the
-size in bytes are not in there, because the picture already knows them and a second copy of an answer
-can only ever drift from it. The page reads them, and what the camera recorded, straight out of the
-file as it is built.
-
-Originals are stored byte for byte as they arrived, EXIF included - re-encoding them would break the
-promise that the id is the hash of the file. Thumbnails that are actually a resize have their
-metadata stripped and the EXIF orientation applied; the ones that are a link to the original are the
-original, EXIF and all, which gives nothing away that `<id>.jpg` does not already serve.
+The service does not make any. `STORAGE_DIR` is its whole state, and backing it up as a directory is
+enough. Its `thumb` directory can be left out: everything in it can be deleted at any time and is
+generated again when it is next asked for.

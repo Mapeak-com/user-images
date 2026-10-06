@@ -8,7 +8,7 @@ does not do and why.
 ```bash
 npm install
 npm run build          # generates the openapi json, then compiles
-TEST_MODE=true npm start
+TEST_MODE=true ADMIN_OSM_USER_IDS=test-admin-id npm start
 npm run test:http      # in another shell
 ```
 
@@ -82,3 +82,44 @@ about one line usually means that line wants to be its own named function.
 2. Add the route to `src/app.ts`, after `authenticate` if it writes anything.
 3. Add a block to `tests/images.http` with `??` assertions. A new endpoint without one will not be
    noticed when it breaks.
+
+## Storage layout
+
+```
+<STORAGE_DIR>/
+  0e/
+    0e3c1efd4bcae001346e399ff9c6d6c3.jpg     the bytes exactly as they were uploaded
+    0e3c1efd4bcae001346e399ff9c6d6c3.json    the metadata
+  thumb/
+    0e/
+      0e3c1efd4bcae001346e399ff9c6d6c3/
+        250px.jpg                              served for ?width=250
+        1920px.jpg                             a link to the original, when it is already narrower
+```
+
+256 buckets, which keeps a directory at a few hundred images for a hundred thousand of them, and at a
+few thousand for a million. `thumb` can never collide with a bucket, since a bucket is two hex
+characters.
+
+A width at least as wide as the picture is the picture, and resizing it would only write a second
+copy of the same image - a client that already caps what it uploads at 1920 and asks for 1920 back
+would otherwise re-encode nearly every picture into a derivative of its own size. Those get a name
+under `thumb` all the same, hard linked to the original, so nginx still serves every size straight
+from disk while the bytes are stored once.
+
+The metadata holds only what cannot be worked out from the picture: what the uploader said about it,
+and what this service established about who sent it and when. The format, the size in pixels and the
+size in bytes are not in there, because the picture already knows them and a second copy of an answer
+can only ever drift from it. The page reads them, and what the camera recorded, straight out of the
+file as it is built.
+
+Originals are stored byte for byte as they arrived, EXIF included - re-encoding them would break the
+promise that the id is the hash of the file. Thumbnails that are actually a resize have their
+metadata stripped and the EXIF orientation applied; the ones that are a link to the original are the
+original, EXIF and all, which gives nothing away that `<id>.jpg` does not already serve.
+
+## Licenses
+
+The accepted licenses are the `license` enum in `user-images.openapi.yml`, which is what refuses an
+upload. A license added there also wants its deed in `LICENSE_URLS` in `page.ts`, or its pages show
+it as plain text.
