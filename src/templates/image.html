@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{title}}</title>
+<link rel="canonical" href="{{pageUrl}}">
+{{#faviconUrl}}
+<link rel="icon" href="{{faviconUrl}}">
+{{/faviconUrl}}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{title}}">
+<meta property="og:url" content="{{pageUrl}}">
+<meta property="og:image" content="{{previewUrl}}">
+<meta property="og:image:type" content="{{mimeType}}">
+{{#size}}
+<meta property="og:image:width" content="{{width}}">
+<meta property="og:image:height" content="{{height}}">
+{{/size}}
+<meta property="og:image:alt" content="{{title}}">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root { color-scheme: light dark; }
+body { margin: 0; padding: 1.5rem; font: 16px/1.5 system-ui, sans-serif; max-width: 60rem; margin-inline: auto; }
+img { max-width: 100%; height: auto; display: block; margin-bottom: 1rem; }
+h1 { font-size: 1.25rem; font-weight: 600; }
+h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+dt { font-weight: 600; }
+dd { margin: 0; }
+.note { margin: 0 0 0.75rem; opacity: 0.7; font-size: 0.875rem; }
+</style>
+</head>
+<body>
+<a href="{{url}}"><img src="{{previewUrl}}" alt="{{title}}"{{#size}} width="{{width}}" height="{{height}}"{{/size}}></a>
+<h1>{{title}}</h1>
+<dl>
+<dt>Author</dt><dd>{{#authorUrl}}<a href="{{authorUrl}}">{{osmUser}}</a>{{/authorUrl}}{{^authorUrl}}{{osmUser}}{{/authorUrl}}</dd>
+<dt>License</dt><dd>{{#licenseUrl}}<a href="{{licenseUrl}}" rel="license">{{license}}</a>{{/licenseUrl}}{{^licenseUrl}}{{license}}{{/licenseUrl}}</dd>
+{{#location}}
+<dt>Location</dt><dd><a href="https://mapeak.com/map/15/{{lat}}/{{lng}}"> {{lat}}, {{lng}} </a></dd>
+{{/location}}
+<dt>Uploaded</dt><dd>{{uploaded}}</dd>
+</dl>
+{{! What the camera recorded is kept apart from what the uploader said, so a date or a position that disagrees is visible rather than hidden }}
+{{#camera}}
+<h2>From the camera (exif data)</h2>
+<dl>
+{{#model}}
+<dt>Camera</dt><dd>{{model}}</dd>
+{{/model}}
+{{#lens}}
+<dt>Lens</dt><dd>{{lens}}</dd>
+{{/lens}}
+{{#takenAt}}
+<dt>Taken</dt><dd>{{takenAt}}</dd>
+{{/takenAt}}
+{{#exposure}}
+<dt>Exposure</dt><dd>{{exposure}}</dd>
+{{/exposure}}
+{{#focalLength}}
+<dt>Focal length</dt><dd>{{focalLength}}</dd>
+{{/focalLength}}
+{{#position}}
+<dt>Position</dt><dd><a href="https://mapeak.com/map/15/{{lat}}/{{lng}}"> {{lat}}, {{lng}} </a></dd>
+{{/position}}
+{{#altitude}}
+<dt>Altitude</dt><dd>{{altitude}}</dd>
+{{/altitude}}
+{{#software}}
+<dt>Software</dt><dd>{{software}}</dd>
+{{/software}}
+</dl>
+{{/camera}}
+</body>
+</html>

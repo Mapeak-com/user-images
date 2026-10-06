@@ -29,6 +29,7 @@ single OSM tag changing.
 
 | | |
 |---|---|
+| `GET /` | A page telling whoever surfs to the bare address what this is and where its code is |
 | `POST /api/images` | Upload. Needs an OSM access token; the uploader is taken from it |
 | `DELETE /api/images/:id` | Delete, for the uploader or a moderator |
 | `GET /:id.jpg` | The original |

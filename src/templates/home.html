@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapeak user images</title>
+<meta name="description" content="Where Mapeak keeps the photos people add to places on the map, served at addresses an OpenStreetMap image tag can hold.">
+<link rel="canonical" href="{{publicBaseUrl}}/">
+{{#faviconUrl}}
+<link rel="icon" href="{{faviconUrl}}">
+{{/faviconUrl}}
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mapeak user images">
+<meta property="og:description" content="Where Mapeak keeps the photos people add to places on the map, served at addresses an OpenStreetMap image tag can hold.">
+<meta property="og:url" content="{{publicBaseUrl}}/">
+<style>
+:root {
+    color-scheme: light dark;
+    --paper: #f3efe6;
+    --ink: #1f1c17;
+    --muted: #6d6556;
+    --rule: #d6cfbf;
+    --survey: #b8461d;
+    --water: #2f6f8f;
+    --forest: #4f7a3a;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #171613;
+        --ink: #ebe5d8;
+        --muted: #9d9483;
+        --rule: #36322b;
+        --survey: #e3825a;
+        --water: #6fb1d1;
+        --forest: #93bd78;
+    }
+}
+* { box-sizing: border-box; }
+html { background: var(--paper); color: var(--ink); }
+body { margin: 0; font: 1.0625rem/1.65 var(--serif); position: relative; overflow-x: hidden; }
+a { color: inherit; text-decoration-color: var(--survey); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+a:hover { color: var(--survey); }
+code { font: 0.85em var(--mono); overflow-wrap: anywhere; }
+.contours { position: absolute; top: -2rem; right: -6rem; width: min(38rem, 90vw); fill: none; stroke: var(--survey); stroke-width: 1; opacity: 0.22; pointer-events: none; }
+.page { position: relative; max-width: 46rem; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+.mast { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; padding-bottom: 0.6rem; border-bottom: 2px solid var(--ink); font: 0.8rem/1.4 var(--mono); letter-spacing: 0.02em; }
+.mast span:last-child { color: var(--muted); }
+h1 { font-weight: 400; font-size: clamp(2rem, 7vw, 3.25rem); line-height: 1.08; letter-spacing: -0.01em; margin: 2.75rem 0 1.25rem; max-width: 15em; }
+h1 em { color: var(--survey); }
+.lede { font-size: 1.15rem; max-width: 34em; margin: 0 0 3rem; }
+h2 { font: 600 0.75rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.75rem; }
+h2::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
+section { margin-bottom: 3rem; }
+.url { font: clamp(0.95rem, 3.6vw, 1.3rem)/1.9 var(--mono); overflow-wrap: anywhere; margin: 0 0 1.5rem; }
+.url span { padding-bottom: 0.1em; }
+.url .base { color: var(--muted); }
+.url .id { border-bottom: 3px solid var(--survey); }
+.url .ext { border-bottom: 3px solid var(--water); }
+.url .width { border-bottom: 3px solid var(--forest); }
+.parts { list-style: none; margin: 0 0 2rem; padding: 0; display: grid; gap: 1rem; }
+.parts li { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; }
+.parts b { font: 600 0.85rem/1.9 var(--mono); }
+.parts .id { color: var(--survey); }
+.parts .ext { color: var(--water); }
+.parts .width { color: var(--forest); }
+.variants { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.6rem 1.25rem; padding: 1rem 1.25rem; border-left: 3px solid var(--rule); }
+.variants dt { font: 0.85rem/1.9 var(--mono); }
+.variants dd { margin: 0; }
+footer { border-top: 1px solid var(--rule); padding-top: 1rem; font-size: 0.9rem; color: var(--muted); font-style: italic; }
+@media (max-width: 34rem) {
+    .contours { right: -9rem; top: -3rem; opacity: 0.16; }
+    h1 { margin-top: 2rem; }
+    .parts li { grid-template-columns: 1fr; gap: 0.1rem; }
+    .variants { grid-template-columns: 1fr; gap: 0; padding: 0.25rem 0 0.25rem 1rem; }
+    .variants dd { margin-bottom: 0.75rem; }
+}
+</style>
+</head>
+<body>
+<svg class="contours" viewBox="0 0 520 420" aria-hidden="true" focusable="false">
+<path d="M338 110 L339 112 L340 114 L340 116 L339 118 L338 120 L337 122 L336 124 L334 126 L332 127 L330 129 L328 130 L326 131 L324 132 L322 133 L320 134 L318 135 L316 136 L314 136 L311 137 L309 137 L307 136 L304 136 L302 135 L300 134 L298 134 L296 133 L294 132 L293 132 L291 132 L289 132 L286 132 L284 132 L281 132 L279 132 L276 132 L273 132 L270 131 L268 130 L266 128 L264 126 L263 124 L263 122 L263 120 L263 118 L264 116 L265 114 L266 112 L267 110 L268 108 L268 107 L269 105 L269 103 L270 102 L270 100 L270 98 L271 97 L272 95 L273 93 L274 92 L275 90 L277 89 L278 88 L280 87 L282 86 L284 85 L286 84 L289 83 L291 82 L293 81 L295 81 L298 80 L300 79 L303 79 L305 79 L308 79 L310 80 L312 81 L314 82 L316 84 L318 86 L319 88 L320 90 L320 92 L321 93 L321 95 L322 97 L323 98 L324 99 L325 100 L327 101 L328 102 L331 103 L333 105 L335 106 L336 108Z"/>
+<path d="M373 110 L375 114 L375 118 L375 122 L374 126 L371 129 L369 133 L366 136 L362 139 L359 141 L355 144 L351 146 L348 148 L344 150 L340 152 L337 154 L333 155 L329 157 L325 158 L320 158 L316 158 L312 158 L308 157 L304 156 L300 155 L296 154 L293 153 L289 153 L286 153 L282 153 L278 153 L273 153 L269 153 L264 154 L258 153 L253 153 L248 151 L244 150 L240 147 L237 144 L235 140 L233 136 L233 132 L234 128 L235 124 L236 120 L238 117 L240 113 L241 110 L243 107 L243 104 L244 101 L244 98 L244 95 L244 92 L244 88 L245 85 L246 81 L248 78 L250 75 L252 72 L255 69 L259 67 L262 65 L266 63 L270 62 L274 60 L278 59 L282 57 L286 56 L291 54 L295 53 L300 53 L305 52 L309 53 L314 54 L318 55 L322 58 L326 60 L329 63 L331 67 L333 71 L334 74 L336 78 L337 81 L338 83 L340 86 L342 88 L345 89 L348 91 L352 93 L356 95 L360 97 L364 100 L368 103 L371 106Z"/>
+<path d="M411 110 L412 116 L412 122 L410 128 L407 133 L403 138 L399 143 L394 147 L388 151 L383 154 L378 158 L373 161 L368 164 L362 167 L357 170 L352 172 L347 175 L341 177 L335 178 L329 179 L323 179 L317 179 L311 178 L306 177 L300 177 L295 176 L289 175 L284 175 L278 175 L272 176 L266 176 L259 177 L252 177 L244 177 L237 176 L230 174 L223 172 L217 168 L212 164 L209 159 L207 153 L206 147 L207 141 L208 135 L210 129 L212 124 L215 119 L217 114 L218 110 L219 106 L219 101 L219 97 L218 92 L217 88 L217 82 L217 77 L217 72 L219 67 L221 62 L224 57 L228 53 L233 49 L238 45 L244 42 L249 40 L255 38 L261 35 L267 33 L274 31 L280 30 L287 28 L293 27 L300 27 L307 27 L313 28 L320 30 L326 33 L331 37 L336 41 L340 46 L343 51 L346 55 L348 60 L350 64 L352 68 L355 71 L358 74 L363 77 L368 79 L373 81 L380 84 L386 87 L393 90 L399 94 L404 99 L408 104Z"/>
+<path d="M449 110 L450 118 L448 126 L444 133 L439 140 L433 146 L426 152 L419 157 L412 162 L405 166 L399 170 L392 175 L386 179 L380 183 L374 187 L367 190 L360 193 L353 196 L346 198 L338 200 L330 201 L323 201 L315 201 L307 200 L300 200 L293 199 L285 199 L278 200 L270 200 L261 201 L253 201 L243 202 L234 202 L224 201 L215 199 L206 196 L198 191 L192 186 L187 179 L184 172 L182 164 L182 156 L184 148 L186 141 L189 134 L191 127 L193 121 L195 116 L195 110 L195 104 L194 99 L192 93 L190 86 L188 80 L187 72 L186 65 L187 58 L189 51 L192 44 L197 38 L203 32 L209 27 L217 23 L224 19 L232 16 L240 13 L249 11 L257 8 L265 6 L274 5 L282 3 L291 3 L300 3 L309 4 L317 6 L325 9 L332 13 L339 18 L345 24 L350 29 L354 35 L357 41 L361 47 L364 51 L368 55 L373 59 L379 61 L386 64 L394 67 L402 70 L411 73 L420 77 L429 82 L437 88 L443 95 L447 102Z"/>
+<path d="M487 110 L485 120 L481 129 L475 138 L468 146 L459 153 L450 160 L442 166 L433 171 L425 177 L418 182 L410 187 L403 193 L397 198 L390 203 L382 208 L374 213 L366 217 L357 220 L348 222 L338 224 L328 224 L319 225 L309 225 L300 225 L291 225 L281 225 L271 226 L261 227 L250 228 L239 228 L227 228 L216 227 L204 225 L193 221 L184 216 L175 210 L169 202 L164 193 L162 184 L161 174 L162 164 L164 155 L167 146 L170 138 L172 130 L173 123 L173 117 L172 110 L169 103 L166 96 L162 88 L159 80 L156 71 L153 61 L153 52 L154 43 L157 34 L162 25 L168 18 L176 11 L185 5 L195 0 L205 -4 L215 -7 L226 -10 L236 -13 L247 -15 L257 -17 L268 -19 L279 -20 L289 -20 L300 -19 L310 -17 L320 -14 L330 -10 L339 -5 L346 1 L353 7 L359 14 L364 21 L370 27 L375 32 L380 37 L387 41 L394 44 L403 47 L412 50 L423 53 L435 57 L447 61 L458 67 L468 74 L476 82 L482 91 L486 100Z"/>
+<path d="M521 110 L517 121 L510 132 L502 142 L492 151 L482 159 L471 167 L461 174 L452 180 L443 187 L436 193 L428 200 L421 207 L414 214 L406 221 L398 227 L389 233 L379 239 L369 243 L358 246 L346 249 L335 250 L323 251 L312 252 L300 252 L288 253 L276 253 L264 254 L252 255 L238 255 L225 255 L211 254 L198 251 L185 247 L174 242 L163 235 L155 226 L149 216 L145 205 L144 194 L144 182 L145 171 L148 160 L150 151 L152 142 L152 133 L152 126 L149 118 L145 110 L140 102 L135 93 L129 83 L123 72 L119 61 L117 49 L116 38 L119 26 L123 16 L130 6 L139 -3 L150 -10 L162 -16 L174 -21 L187 -26 L200 -29 L212 -32 L225 -35 L238 -37 L250 -39 L263 -40 L275 -41 L288 -40 L300 -39 L312 -37 L324 -33 L334 -28 L344 -22 L353 -15 L361 -8 L369 -1 L376 5 L383 11 L390 16 L398 21 L407 24 L418 27 L430 30 L443 34 L457 38 L471 43 L484 49 L497 57 L507 66 L515 76 L521 87 L522 98Z"/>
+<path d="M551 110 L544 123 L535 135 L524 146 L512 155 L500 164 L489 173 L479 180 L469 188 L461 196 L454 204 L447 213 L440 222 L433 231 L425 240 L416 248 L406 256 L394 263 L382 268 L369 273 L356 276 L342 278 L328 279 L314 280 L300 281 L286 282 L272 282 L257 282 L242 283 L227 282 L212 281 L196 278 L182 274 L168 268 L156 260 L146 251 L138 240 L133 227 L129 215 L128 202 L129 189 L130 177 L132 166 L133 155 L133 146 L131 137 L127 128 L122 119 L115 110 L107 100 L98 89 L90 77 L84 64 L79 50 L77 36 L78 22 L82 9 L89 -3 L99 -13 L111 -22 L125 -30 L139 -36 L155 -41 L170 -46 L185 -49 L200 -52 L215 -54 L229 -56 L244 -58 L258 -59 L272 -60 L286 -59 L300 -58 L313 -55 L326 -51 L339 -45 L350 -39 L360 -32 L370 -25 L379 -18 L388 -12 L397 -7 L407 -2 L418 2 L431 5 L445 8 L460 12 L476 16 L492 21 L508 28 L523 36 L536 46 L546 57 L553 70 L556 83 L556 97Z"/>
+<path d="M576 110 L566 124 L555 137 L542 148 L529 159 L516 169 L505 178 L495 187 L487 196 L480 206 L474 217 L468 228 L461 239 L454 251 L445 262 L435 272 L424 282 L411 290 L396 296 L381 301 L365 305 L349 307 L333 309 L316 310 L300 310 L284 310 L267 310 L250 310 L233 309 L216 307 L199 305 L183 300 L167 294 L153 286 L141 276 L131 264 L124 251 L119 237 L116 223 L115 209 L115 195 L116 183 L116 171 L115 160 L111 150 L106 141 L99 131 L89 121 L79 110 L68 98 L57 84 L47 70 L40 54 L36 38 L36 22 L39 7 L46 -7 L56 -20 L70 -31 L85 -41 L102 -48 L120 -54 L138 -59 L156 -63 L173 -66 L190 -69 L206 -71 L222 -74 L238 -76 L254 -77 L269 -78 L285 -77 L300 -76 L315 -73 L329 -69 L343 -63 L356 -57 L368 -51 L380 -44 L391 -38 L403 -32 L415 -27 L428 -23 L442 -19 L458 -16 L475 -12 L493 -8 L511 -3 L530 4 L547 13 L562 23 L574 36 L582 49 L587 64 L587 80 L584 95Z"/>
+<path d="M596 110 L583 125 L570 138 L556 151 L543 162 L531 173 L521 183 L513 194 L507 206 L502 218 L497 231 L492 245 L486 259 L478 273 L469 286 L458 299 L444 310 L429 319 L412 326 L394 331 L375 335 L357 337 L338 338 L319 339 L300 339 L281 338 L263 337 L244 336 L225 333 L207 330 L188 326 L171 319 L155 311 L141 301 L129 289 L119 275 L112 260 L107 245 L104 230 L103 216 L101 202 L100 189 L97 177 L92 166 L85 156 L76 146 L65 135 L51 123 L37 110 L24 96 L11 80 L1 62 L-5 45 L-8 26 L-6 9 L1 -8 L12 -23 L26 -36 L43 -48 L62 -57 L83 -64 L103 -69 L124 -74 L143 -77 L162 -81 L181 -84 L198 -87 L215 -89 L232 -92 L249 -94 L266 -95 L283 -96 L300 -95 L317 -92 L333 -88 L348 -84 L363 -78 L377 -72 L391 -66 L405 -60 L419 -55 L434 -51 L450 -47 L468 -43 L486 -39 L506 -35 L527 -29 L547 -22 L566 -13 L583 -2 L598 11 L608 26 L614 43 L616 60 L613 77 L606 94Z"/>
+</svg>
+<div class="page">
+<header class="mast"><span>{{host}}</span><span>the image store behind Mapeak</span></header>
+<main>
+<h1>The photos people pin to places on the map are <em>kept here</em>.</h1>
+<p class="lede">When someone adds a picture to a place on <a href="https://mapeak.com">Mapeak</a>, this service stores it,
+and the place on <a href="https://www.openstreetmap.org">OpenStreetMap</a> keeps the picture's address in its
+<code>image</code> tag. There is nothing to browse at this address. Every picture is reached from the place it belongs to.</p>
+
+<section>
+<h2>Reading an address</h2>
+<p class="url"><span class="base">{{publicBaseUrl}}/</span><span class="id">3a7f9c2e1b4d0a95f60c2d3e4f501b6c</span><span class="ext">.jpg</span>{{#widths}}<span class="width">?width={{thumbnailWidth}}</span>{{/widths}}</p>
+<ol class="parts">
+<li><b class="id">id</b><span>The first 32 hex characters of the SHA-256 of the file. The same photo always gets the same id,
+and the photo behind an id never changes, so it can be cached forever.</span></li>
+<li><b class="ext">.jpg</b><span>The original, byte for byte as it was uploaded. Pictures can also be <code>.png</code> or <code>.webp</code>.</span></li>
+{{#widths}}
+<li><b class="width">?width=</b><span>A smaller copy, made the first time someone asks for it. Available widths: {{widths}}.</span></li>
+{{/widths}}
+</ol>
+<dl class="variants">
+<dt>&hellip;/3a7f&hellip;6c</dt><dd>The credit page: the photo, who took it and its license. Link to this when you use a picture.</dd>
+<dt>&hellip;/3a7f&hellip;6c.json</dt><dd>The same details as data.</dd>
+</dl>
+</section>
+
+<section>
+<h2>Source</h2>
+<p>The service is open source under the MIT license. The code, how to run it and the issue tracker are at
+<a href="https://github.com/Mapeak-com/user-images">github.com/Mapeak-com/user-images</a>, and the HTTP API is
+described at <a href="api-docs" style="white-space: nowrap">/api-docs</a>.</p>
+</section>
+</main>
+<footer>Each photo belongs to the OpenStreetMap contributor who took it, under the license shown on its page.</footer>
+</div>
+</body>
+</html>

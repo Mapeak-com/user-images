@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "generate-json": "js-yaml ./user-images.openapi.yml > ./src/user-images.openapi.json",
-    "build": "npm run generate-json && tsc",
+    "build": "npm run generate-json && tsc && node -e \"require('node:fs').cpSync('src/templates', 'dist/templates', { recursive: true })\"",
     "start": "node dist/index.js",
     "test:fixtures": "node ./tests/generate-fixtures.mjs",
     "test:http": "npm run test:fixtures && httpyac ./tests/*.http --all"
@@ -24,6 +24,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/multer": "^2.0.0",
+    "@types/mustache": "^4.2.6",
     "@types/node": "^26.4.1",
     "@types/swagger-ui-express": "^4.1.8",
     "httpyac": "^6.16.0",
@@ -36,6 +37,7 @@
     "express": "^5.2.1",
     "lru-cache": "^11.2.5",
     "multer": "^2.0.2",
+    "mustache": "^4.2.0",
     "sharp": "^0.35.4",
     "swagger-ui-express": "^5.0.1"
   }

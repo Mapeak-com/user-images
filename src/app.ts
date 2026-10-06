@@ -8,7 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from './config.js';
 import { AuthenticatedUser, authenticate } from './auth.js';
 import { createThumbnail, measure, probe } from './images.js';
-import { renderImagePage } from './page.js';
+import { renderHomePage, renderImagePage } from './page.js';
 import {
     ID_PATTERN,
     ImageFormat,
@@ -46,6 +46,15 @@ const upload = multer({
 export const app = express();
 app.use(cors());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
+
+/** What someone surfing to the bare address sees - what this is, who it is for and where its code is */
+app.get('/', (req: Request, res: Response) => {
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.type('html').send(renderHomePage(config.publicBaseUrl, {
+        thumbnailWidths: config.thumbnailWidths,
+        faviconUrl: config.faviconUrl
+    }));
+});
 
 app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok' });

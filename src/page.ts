@@ -1,3 +1,6 @@
+import path from 'node:path';
+import Mustache from 'mustache';
+import { readFileSync } from 'node:fs';
 import { MeasuredImage } from './images.js';
 import { ImageFormat, ImageMetadata } from './storage.js';
 
@@ -20,73 +23,52 @@ function escapeHtml(value: string): string {
         .replace(/"/g, '&quot;');
 }
 
-/**
- * Links the author to their OSM page, unless the picture was imported for an account that is no longer
- * there, in which case there is nothing to link to and the name is shown on its own.
- */
-function authorHtml(osmUser: string, osmUserId?: string): string {
-    return osmUserId
-        ? `<a href="https://www.openstreetmap.org/user/${encodeURIComponent(osmUser)}">${escapeHtml(osmUser)}</a>`
-        : escapeHtml(osmUser);
+export type SiteSettings = {
+    thumbnailWidths: number[];
+    faviconUrl: string;
+};
+
+/** The pages never change while the service runs, so each template is read once */
+function readTemplate(name: string): string {
+    return readFileSync(path.join(__dirname, 'templates', name), 'utf8');
 }
 
-function rowHtml(label: string, value?: string): string {
-    return value ? `<dt>${escapeHtml(label)}</dt><dd>${value}</dd>` : '';
-}
+const IMAGE_TEMPLATE = readTemplate('image.html');
+const HOME_TEMPLATE = readTemplate('home.html');
 
-function coordinatesHtml(location: { lat: number; lng: number }): string {
-    const { lat, lng } = location;
-    return `<a href="https://mapeak.com/map/15/${lat}/${lng}"> ${lat}, ${lng} </a>`;
-}
-
-/** A date is shown to the day, since the time of day is only ever noise on a page like this */
-function day(value: string): string {
-    return escapeHtml(value.slice(0, 10));
+function render(template: string, view: object): string {
+    return Mustache.render(template, view, {}, { escape: value => escapeHtml(String(value)) });
 }
 
 /**
- * What the camera recorded, kept in a section of its own.
+ * What the camera recorded, or nothing when it recorded none of what the page shows.
  *
- * The point of separating it is that everything above it is what the uploader said, and this is what
- * the picture itself says - so a date or a position that disagrees is visible rather than hidden.
+ * Every key is present even when it is empty, since a key missing from a section makes mustache look
+ * it up on the page around it instead. Each is text rather than a number, because a section hides a 0.
  */
-function exifHtml(exif: MeasuredImage['exif']): string {
+function cameraView(exif: MeasuredImage['exif']) {
     if (!exif) {
-        return '';
+        return undefined;
     }
     const exposure = [
         exif.exposureTime,
         exif.fNumber ? `f/${exif.fNumber}` : undefined,
         exif.iso ? `ISO ${exif.iso}` : undefined
-    ].filter(Boolean).join(' &middot; ');
-    const focalLength = exif.focalLength
-        ? `${exif.focalLength} mm`
-        + (exif.focalLengthIn35mm ? ` (${exif.focalLengthIn35mm} mm equivalent)` : '')
-        : undefined;
-
-    const rows = [
-        rowHtml('Camera', exif.camera && escapeHtml(exif.camera)),
-        rowHtml('Lens', exif.lens && escapeHtml(exif.lens)),
-        rowHtml('Taken', exif.takenAt && escapeHtml(exif.takenAt.replace('T', ' '))),
-        rowHtml('Exposure', exposure || undefined),
-        rowHtml('Focal length', focalLength),
-        rowHtml('Position', exif.location && coordinatesHtml(exif.location)),
-        rowHtml('Altitude', exif.altitude !== undefined ? `${exif.altitude} m` : undefined),
-        rowHtml('Software', exif.software && escapeHtml(exif.software))
-    ].filter(Boolean);
-
-    return rows.length === 0 ? '' : `
-<h2>From the camera (exif data)</h2>
-<dl>
-${rows.join('\n')}
-</dl>`;
-}
-
-function licenseHtml(license: string): string {
-    const url = LICENSE_URLS[license];
-    return url
-        ? `<a href="${escapeHtml(url)}" rel="license">${escapeHtml(license)}</a>`
-        : escapeHtml(license);
+    ].filter(Boolean).join(' \u00b7 ');
+    const camera = {
+        model: exif.camera,
+        lens: exif.lens,
+        takenAt: exif.takenAt?.replace('T', ' '),
+        exposure: exposure || undefined,
+        focalLength: exif.focalLength
+            ? `${exif.focalLength} mm`
+            + (exif.focalLengthIn35mm ? ` (${exif.focalLengthIn35mm} mm equivalent)` : '')
+            : undefined,
+        position: exif.location,
+        altitude: exif.altitude !== undefined ? `${exif.altitude} m` : undefined,
+        software: exif.software
+    };
+    return Object.values(camera).some(Boolean) ? camera : undefined;
 }
 
 /**
@@ -94,11 +76,6 @@ function licenseHtml(license: string): string {
  * of an image taken from there links to - it shows the picture together with who took it and the
  * license it may be used under.
  */
-export type SiteSettings = {
-    thumbnailWidths: number[];
-    faviconUrl: string;
-};
-
 export function renderImagePage(
     metadata: ImageMetadata,
     format: ImageFormat,
@@ -119,53 +96,41 @@ export function renderImagePage(
     const height = width && measured.width && measured.height
         ? Math.round(measured.height * (width / measured.width))
         : undefined;
-    const sizeAttributes = width && height ? ` width="${width}" height="${height}"` : '';
 
     // The page is the url without the extension, which is the one worth sharing since it carries the
     // credit and the license rather than the bare bytes.
     const pageUrl = metadata.url.replace(new RegExp(`\\.${format}$`), '');
 
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title>
-<link rel="canonical" href="${escapeHtml(pageUrl)}">${site.faviconUrl ? `
-<link rel="icon" href="${escapeHtml(site.faviconUrl)}">` : ''}
-<meta property="og:type" content="article">
-<meta property="og:title" content="${escapeHtml(title)}">
-<meta property="og:url" content="${escapeHtml(pageUrl)}">
-<meta property="og:image" content="${escapeHtml(previewUrl)}">
-<meta property="og:image:type" content="image/${format === 'jpg' ? 'jpeg' : format}">${width && height ? `
-<meta property="og:image:width" content="${width}">
-<meta property="og:image:height" content="${height}">` : ''}
-<meta property="og:image:alt" content="${escapeHtml(title)}">
-<meta name="twitter:card" content="summary_large_image">
-<style>
-:root { color-scheme: light dark; }
-body { margin: 0; padding: 1.5rem; font: 16px/1.5 system-ui, sans-serif; max-width: 60rem; margin-inline: auto; }
-img { max-width: 100%; height: auto; display: block; margin-bottom: 1rem; }
-h1 { font-size: 1.25rem; font-weight: 600; }
-h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
-dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
-dt { font-weight: 600; }
-dd { margin: 0; }
-.note { margin: 0 0 0.75rem; opacity: 0.7; font-size: 0.875rem; }
-</style>
-</head>
-<body>
-<a href="${escapeHtml(metadata.url)}"><img src="${escapeHtml(previewUrl)}" alt="${escapeHtml(title)}"${sizeAttributes}></a>
-<h1>${escapeHtml(title)}</h1>
-<dl>
-${[
-            rowHtml('Author', authorHtml(metadata.osmUser, metadata.osmUserId)),
-            rowHtml('License', licenseHtml(metadata.license)),
-            rowHtml('Location', metadata.location && coordinatesHtml(metadata.location)),
-            rowHtml('Uploaded', day(metadata.uploadedAt))
-        ].filter(Boolean).join('\n')}
-</dl>${exifHtml(measured.exif)}
-</body>
-</html>
-`;
+    return render(IMAGE_TEMPLATE, {
+        title,
+        pageUrl,
+        previewUrl,
+        url: metadata.url,
+        mimeType: `image/${format === 'jpg' ? 'jpeg' : format}`,
+        faviconUrl: site.faviconUrl,
+        size: width && height ? { width, height } : undefined,
+        osmUser: metadata.osmUser,
+        // An account that has since been deleted has no page left to link to, so the name is shown on its own
+        authorUrl: metadata.osmUserId
+            ? `https://www.openstreetmap.org/user/${encodeURIComponent(metadata.osmUser)}`
+            : undefined,
+        license: metadata.license,
+        licenseUrl: LICENSE_URLS[metadata.license],
+        location: metadata.location,
+        // A date is shown to the day, since the time of day is only ever noise on a page like this
+        uploaded: metadata.uploadedAt.slice(0, 10),
+        camera: cameraView(measured.exif)
+    });
+}
+
+/**
+ * The page at the root of an instance. Whoever surfs to the bare address - usually by trimming an
+ * image url they found in an OSM tag - is told what the service is, who it is for and where its code is.
+ */
+export function renderHomePage(publicBaseUrl: string, site: SiteSettings): string {
+    return render(HOME_TEMPLATE, {
+        publicBaseUrl,
+        faviconUrl: site.faviconUrl,
+        thumbnailWidth: site.thumbnailWidths[0] ?? 250
+    });
 }

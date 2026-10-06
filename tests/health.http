@@ -6,3 +6,11 @@ GET {{host}}/health
 
 ?? status == 200
 ?? js response.parsedBody.status == ok
+
+###
+# @name HomePage
+GET {{host}}/
+
+?? status == 200
+?? header content-type includes text/html
+?? body includes github.com/Mapeak-com/user-images
